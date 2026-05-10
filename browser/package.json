@@ -1,0 +1,24 @@
+{
+  "name": "abx",
+  "version": "0.1.0",
+  "description": "Fast headless browser CLI for AI coding agents. Persistent Bun daemon over Playwright Chromium.",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "abx": "./dist/abx"
+  },
+  "scripts": {
+    "build": "bun build --compile src/cli.ts --outfile dist/abx && bun build src/live.ts --target node --format esm --packages external --outfile dist/live.mjs && chmod +x dist/abx",
+    "dev": "bun run src/cli.ts",
+    "server": "bun run src/server.ts"
+  },
+  "dependencies": {
+    "diff": "^7.0.0",
+    "playwright": "^1.58.2",
+    "socks": "^2.8.8"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/diff": "^5.2.0"
+  }
+}

@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# Relaunch Google Chrome with --remote-debugging-port=9222 against the user's
+# default profile so `abx live ...` can attach over CDP.
+#
+# Behavior:
+#   1. Detects a running Chrome.
+#   2. Prompts before quitting (skip prompt with --yes).
+#   3. Quits Chrome politely (osascript), waits for shutdown.
+#   4. Relaunches Chrome with the debug port bound to 127.0.0.1.
+#
+# Once running, your daily Chrome — same profile, tabs, extensions, sessions —
+# also exposes CDP for any local process. Close this Chrome and reopen normally
+# to revert.
+
+set -euo pipefail
+
+PORT="${ABX_LIVE_CDP_PORT:-9222}"
+CHROME_APP="${CHROME_APP:-/Applications/Google Chrome.app}"
+CHROME_BIN="$CHROME_APP/Contents/MacOS/Google Chrome"
+ASSUME_YES=0
+
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes) ASSUME_YES=1 ;;
+    -h|--help)
+      cat <<EOF
+chrome-debug — relaunch Chrome with CDP on 127.0.0.1:$PORT for abx live mode
+
+Usage: chrome-debug [--yes]
+
+  --yes   Skip the quit confirmation prompt.
+
+Env:
+  ABX_LIVE_CDP_PORT  Override port (default 9222).
+  CHROME_APP         Path to Chrome.app (default /Applications/Google Chrome.app).
+EOF
+      exit 0
+      ;;
+  esac
+done
+
+if [ ! -x "$CHROME_BIN" ]; then
+  echo "chrome-debug: Chrome binary not found at $CHROME_BIN" >&2
+  echo "chrome-debug: set CHROME_APP=/path/to/Google Chrome.app and retry." >&2
+  exit 1
+fi
+
+# Already on the debug port? Nothing to do.
+if curl -fsS --connect-timeout 1 "http://127.0.0.1:$PORT/json/version" >/dev/null 2>&1; then
+  echo "chrome-debug: Chrome already exposes CDP on 127.0.0.1:$PORT — nothing to do."
+  exit 0
+fi
+
+if pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome" >/dev/null 2>&1; then
+  echo "chrome-debug: Chrome is running without the debug port."
+  echo "chrome-debug: To enable CDP, Chrome must be quit and relaunched."
+  if [ "$ASSUME_YES" -eq 0 ]; then
+    printf "Quit Chrome and relaunch with debug port? [y/N] "
+    read -r reply
+    case "$reply" in
+      y|Y|yes|YES) ;;
+      *) echo "chrome-debug: aborted." ; exit 1 ;;
+    esac
+  fi
+  echo "chrome-debug: asking Chrome to quit (saves session state)..."
+  osascript -e 'tell application "Google Chrome" to quit' || true
+  for _ in $(seq 1 20); do
+    if ! pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.5
+  done
+  if pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome" >/dev/null 2>&1; then
+    echo "chrome-debug: Chrome did not quit within 10s. Quit it manually and retry." >&2
+    exit 1
+  fi
+fi
+
+echo "chrome-debug: launching Chrome with --remote-debugging-port=$PORT (bound to 127.0.0.1)"
+echo "chrome-debug: WARNING — while this Chrome is running, any local process can read"
+echo "chrome-debug:           your sessions, cookies, and DOM via CDP. Close this Chrome"
+echo "chrome-debug:           and reopen normally to revert."
+
+# Use 'open -a' so it goes through LaunchServices and behaves like a normal launch.
+# --args after -a passes flags to the application.
+open -a "$CHROME_APP" --args \
+  --remote-debugging-port="$PORT" \
+  --remote-debugging-address=127.0.0.1 \
+  --remote-allow-origins=*
+
+# Wait for the debug endpoint to come up so callers can chain immediately.
+for _ in $(seq 1 30); do
+  if curl -fsS --connect-timeout 1 "http://127.0.0.1:$PORT/json/version" >/dev/null 2>&1; then
+    echo "chrome-debug: ready — abx live <cmd> will now attach."
+    exit 0
+  fi
+  sleep 0.5
+done
+
+echo "chrome-debug: Chrome relaunched, but CDP endpoint never came up at 127.0.0.1:$PORT" >&2
+exit 1
