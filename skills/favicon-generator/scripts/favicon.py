@@ -176,14 +176,14 @@ def write_manifest(cfg: Config) -> dict:
     }
 
 
-def write_browserconfig() -> str:
+def write_browserconfig(tile_color: str = "#ffffff") -> str:
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         "<browserconfig><msapplication><tile>"
         '<square70x70logo src="/ms-icon-70x70.png"/>'
         '<square150x150logo src="/ms-icon-150x150.png"/>'
         '<square310x310logo src="/ms-icon-310x310.png"/>'
-        "<TileColor>#ffffff</TileColor>"
+        f"<TileColor>{tile_color}</TileColor>"
         "</tile></msapplication></browserconfig>\n"
     )
 
@@ -264,7 +264,7 @@ def write_html_snippet(cfg: Config) -> str:
     if has_manifest:
         out.append('<link rel="manifest" href="/manifest.json" />')
     if has_ms:
-        out.append(f'<meta name="msapplication-TileColor" content="#ffffff" />')
+        out.append(f'<meta name="msapplication-TileColor" content="{cfg.theme_color}" />')
         out.append('<meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />')
         out.append('<meta name="msapplication-config" content="/browserconfig.xml" />')
     out.append(f'<meta name="theme-color" content="{cfg.theme_color}" />')
@@ -310,7 +310,8 @@ def generate(cfg: Config) -> None:
     if do("web") or do("windows"):
         for s in MS_TILES:
             render_png(src, cfg.out / f"ms-icon-{s}x{s}.png", s)
-        write_text(cfg.out / "browserconfig.xml", write_browserconfig(), cfg.overwrite)
+        write_text(cfg.out / "browserconfig.xml",
+                   write_browserconfig(cfg.theme_color), cfg.overwrite)
 
     # manifest (web/android)
     if do("web") or do("android"):
