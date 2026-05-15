@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PROFILE="${1:-}"
+
+load_machine_env() {
+  # MCP clients launched from apps usually do not source shell profiles.
+  # Source machine-local exports here; never store secrets in this repo.
+  set -a
+  for file in "$HOME/.profile" "$HOME/.zprofile"; do
+    if [[ -r "$file" ]]; then
+      # shellcheck source=/dev/null
+      source "$file"
+    fi
+  done
+  set +a
+}
+
+usage() {
+  cat >&2 <<'USAGE'
+Usage: agent-mcp <profile>
+
+Profiles:
+  chrome-devtools  Chrome DevTools MCP attached to the live Chrome session
+  recall           Recall local MCP
+  zapfeed          Zapfeed remote MCP via mcp-remote + ZAPFEED_API_KEY
+  guiport          macOS desktop automation MCP
+
+Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
+USAGE
+}
+
+if [[ -z "$PROFILE" || "$PROFILE" == "-h" || "$PROFILE" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+case "$PROFILE" in
+  chrome-devtools)
+    exec npx -y chrome-devtools-mcp@latest --autoConnect
+    ;;
+
+  recall)
+    exec /Applications/Recall.app/Contents/Resources/Runtime/bin/node \
+      /Applications/Recall.app/Contents/Resources/Runtime/dist/mcp.js
+    ;;
+
+  zapfeed)
+    load_machine_env
+    if [[ -z "${ZAPFEED_API_KEY:-}" ]]; then
+      echo "agent-mcp zapfeed: ZAPFEED_API_KEY missing. Set it in ~/.profile or ~/.zprofile." >&2
+      exit 78
+    fi
+    export AUTH_HEADER="Bearer ${ZAPFEED_API_KEY}"
+    # mcp-remote expands AUTH_HEADER itself; keep token out of process args.
+    # shellcheck disable=SC2016
+    exec npx -y mcp-remote@0.1.38 \
+      https://zapfeed.io/api/mcp \
+      --transport http-first \
+      --header 'Authorization:${AUTH_HEADER}' \
+      --silent
+    ;;
+
+  guiport)
+    exec guiport serve --mcp
+    ;;
+
+  *)
+    echo "agent-mcp: unknown profile '$PROFILE'" >&2
+    usage
+    exit 64
+    ;;
+esac
