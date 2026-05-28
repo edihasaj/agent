@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# farm-tabname <path> <pane_id> — set a PANE's title to its project:
+#   - inside a git repo  -> repo root basename (e.g. vmlab, even from subdirs)
+#   - otherwise          -> last two path breadcrumbs (e.g. Projects/notes)
+# (Top tab/window names stay generic F1, F2, ... — set elsewhere.)
+path="$1"; pane="$2"
+[[ -n "$path" && -n "$pane" ]] || exit 0
+
+if root=$(git -C "$path" rev-parse --show-toplevel 2>/dev/null); then
+  name=$(basename "$root")
+else
+  parent=$(basename "$(dirname "$path")")
+  name="$parent/$(basename "$path")"
+fi
+
+# store in a custom pane option (p10k clobbers pane_title, but never @proj)
+tmux set-option -p -t "$pane" @proj "$name" 2>/dev/null
