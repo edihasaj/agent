@@ -37,6 +37,27 @@ for pid in $(tmux list-panes -s -t "$sess" -F '#{pane_id}'); do
   tmux select-layout -t "$first" tiled >/dev/null 2>&1
 done
 
+# 1b) reorder so WORKING panes lead: busy (running an agent) first, grouped by
+# project, idle shells pushed to the back. Step 2 then slices in this order, so the
+# front tab(s) — the visible grid — hold the sessions you're actually working in
+# instead of whatever pane-id order survived the consolidate. swap-pane only moves
+# panes (never kills), so running agents are safe.
+sort_key() {   # emit "busy\tproject\tpane_id" per pane; busy 0=agent 1=shell
+  tmux list-panes -t "$first" -F '#{pane_id}|#{pane_current_command}|#{@proj}|#{b:pane_current_path}' \
+  | while IFS='|' read -r pid cmd proj base; do
+      case "$cmd" in zsh|-zsh|bash|-bash|sh|login|fish) busy=1 ;; *) busy=0 ;; esac
+      printf '%d\t%s\t%s\n' "$busy" "${proj:-$base}" "$pid"
+    done | sort -t$'\t' -k1,1n -k2,2 -k3,3
+}
+desired=( $(sort_key | cut -f3) )
+# selection sort into `desired`: positions <k are already final, so only pull from >=k
+for ((k = 0; k < ${#desired[@]}; k++)); do
+  cur=$(tmux list-panes -t "$first" -F '#{pane_id}' | sed -n "$((k + 1))p")
+  want=${desired[$k]}
+  [[ -z "$cur" || "$cur" == "$want" ]] && continue
+  tmux swap-pane -d -s "$want" -t "$cur" 2>/dev/null
+done
+
 # 2) break the pool into groups of `per`
 ids=( $(tmux list-panes -t "$first" -F '#{pane_id}') )
 total=${#ids[@]}
