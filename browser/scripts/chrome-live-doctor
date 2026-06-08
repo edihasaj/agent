@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# Diagnose the live Chrome CDP setup used by `abx live ...`.
+#
+# Read-only. It never quits or relaunches Chrome.
+
+set -euo pipefail
+
+PORT="${ABX_LIVE_CDP_PORT:-9222}"
+CDP_URL="${ABX_LIVE_CDP_URL:-http://127.0.0.1:${PORT}}"
+for arg in "$@"; do
+  case "$arg" in
+    -h|--help)
+      cat <<EOF
+chrome-live-doctor — check Chrome CDP readiness for abx live
+
+Usage: chrome-live-doctor
+
+Env:
+  ABX_LIVE_CDP_PORT  Port used by chrome-debug (default 9222)
+  ABX_LIVE_CDP_URL   Full CDP URL (default http://127.0.0.1:<port>)
+EOF
+      exit 0
+      ;;
+    *)
+      echo "chrome-live-doctor: unknown arg $arg" >&2
+      exit 64
+      ;;
+  esac
+done
+
+ok=1
+
+echo "chrome-live-doctor: CDP ${CDP_URL}"
+if curl -fsS --connect-timeout 1 "${CDP_URL}/json/version" >/dev/null 2>&1; then
+  echo "ok: Chrome CDP endpoint is reachable"
+else
+  echo "fail: Chrome CDP endpoint is not reachable"
+  ok=0
+fi
+
+chrome_count="$(pgrep -fl "Google Chrome.app/Contents/MacOS/Google Chrome" 2>/dev/null | wc -l | tr -d ' ')"
+echo "chrome-live-doctor: Chrome process count=${chrome_count}"
+if pgrep -fl "Google Chrome.app/Contents/MacOS/Google Chrome" >/dev/null 2>&1; then
+  pgrep -fl "Google Chrome.app/Contents/MacOS/Google Chrome" | sed 's/^/  /'
+fi
+
+mcp_count="$(pgrep -fl "chrome-devtools-mcp" 2>/dev/null | wc -l | tr -d ' ')"
+echo "chrome-live-doctor: chrome-devtools-mcp process count=${mcp_count}"
+if [ "${mcp_count}" -gt 1 ]; then
+  echo "warn: multiple chrome-devtools-mcp processes are running; prefer one MCP client/session"
+fi
+
+exit "$((1 - ok))"

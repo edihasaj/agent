@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+#
+# Low-latency browser smoke runner.
+#
+# Uses one `abx chain` call, so a whole smoke flow is one request to the
+# persistent abx browser server. This is the fast inner-loop path; vmlab can
+# wrap it later for matrix/evidence runs.
+
+set -euo pipefail
+
+ABX_BIN="${ABX_BIN:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/dist/abx}"
+export BROWSE_PARENT_PID="${BROWSE_PARENT_PID:-0}"
+
+usage() {
+  cat <<'EOF'
+browser-smoke — run a fast abx chain browser smoke
+
+Usage:
+  browser-smoke <flow.json>
+  browser-smoke '<pipe chain>'
+  cat flow.json | browser-smoke -
+
+JSON flow:
+  [["goto","http://localhost:3000"],["wait","--networkidle"],["text"]]
+
+Pipe chain:
+  'goto http://localhost:3000 | wait --networkidle | text'
+
+Notes:
+  - This uses abx's managed browser, not the user's personal Chrome.
+  - This is the low-latency inner-loop path.
+  - Use vmlab around this when you need target matrices/evidence bundles.
+EOF
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] || [ $# -eq 0 ]; then
+  usage
+  exit 0
+fi
+
+input="$1"
+if [ "$input" = "-" ]; then
+  "$ABX_BIN" chain
+elif [ -f "$input" ]; then
+  "$ABX_BIN" chain < "$input"
+else
+  "$ABX_BIN" chain "$input"
+fi

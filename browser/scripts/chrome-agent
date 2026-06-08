@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+#
+# Start/check/stop a separate Chrome profile for agent browser automation.
+# This does not touch the user's daily Chrome profile or windows.
+
+set -euo pipefail
+
+CMD="${1:-status}"
+PORT="${AGENT_CHROME_PORT:-9223}"
+PROFILE_DIR="${AGENT_CHROME_PROFILE_DIR:-$HOME/Projects/farm/browser/chrome-profile}"
+CHROME_APP="${CHROME_APP:-/Applications/Google Chrome.app}"
+CHROME_BIN="$CHROME_APP/Contents/MacOS/Google Chrome"
+CDP_URL="http://127.0.0.1:${PORT}"
+PID_FILE="${PROFILE_DIR}/chrome.pid"
+
+usage() {
+  cat <<EOF
+chrome-agent — dedicated Chrome profile for agents
+
+Usage: chrome-agent <start|status|stop|url>
+
+Env:
+  AGENT_CHROME_PORT         CDP port (default 9223)
+  AGENT_CHROME_PROFILE_DIR  profile dir (default ~/Projects/farm/browser/chrome-profile)
+  CHROME_APP                Chrome.app path
+
+For abx live against this profile:
+  ABX_LIVE_CDP_URL=${CDP_URL} abx live status
+EOF
+}
+
+endpoint_up() {
+  curl -fsS --connect-timeout 1 "${CDP_URL}/json/version" >/dev/null 2>&1
+}
+
+case "$CMD" in
+  -h|--help|help)
+    usage
+    ;;
+
+  status)
+    echo "chrome-agent: profile=${PROFILE_DIR}"
+    echo "chrome-agent: cdp=${CDP_URL}"
+    if endpoint_up; then
+      echo "ok: agent Chrome CDP is reachable"
+      curl -fsS --connect-timeout 1 "${CDP_URL}/json/version" | python3 -m json.tool 2>/dev/null || true
+      exit 0
+    fi
+    echo "fail: agent Chrome CDP is not reachable"
+    exit 1
+    ;;
+
+  url)
+    echo "${CDP_URL}"
+    ;;
+
+  start)
+    if [ ! -x "$CHROME_BIN" ]; then
+      echo "chrome-agent: Chrome binary not found at $CHROME_BIN" >&2
+      exit 1
+    fi
+    if endpoint_up; then
+      echo "chrome-agent: already running at ${CDP_URL}"
+      exit 0
+    fi
+    mkdir -p "$PROFILE_DIR"
+    echo "chrome-agent: launching dedicated Chrome profile"
+    echo "chrome-agent: profile=${PROFILE_DIR}"
+    echo "chrome-agent: cdp=${CDP_URL}"
+    nohup "$CHROME_BIN" \
+      --user-data-dir="$PROFILE_DIR" \
+      --remote-debugging-port="$PORT" \
+      --remote-debugging-address=127.0.0.1 \
+      --remote-allow-origins='*' \
+      --no-first-run \
+      --disable-popup-blocking \
+      >"${PROFILE_DIR}/chrome.log" 2>&1 &
+    echo "$!" > "$PID_FILE"
+    for _ in $(seq 1 30); do
+      if endpoint_up; then
+        echo "chrome-agent: ready"
+        exit 0
+      fi
+      sleep 0.5
+    done
+    echo "chrome-agent: launched, but CDP never came up; see ${PROFILE_DIR}/chrome.log" >&2
+    exit 1
+    ;;
+
+  stop)
+    if endpoint_up; then
+      curl -fsS --connect-timeout 1 "${CDP_URL}/json/close" >/dev/null 2>&1 || true
+    fi
+    if [ -f "$PID_FILE" ]; then
+      pid="$(cat "$PID_FILE")"
+      if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        kill "$pid" 2>/dev/null || true
+      fi
+      rm -f "$PID_FILE"
+    fi
+    pkill -f "Google Chrome.*--user-data-dir=${PROFILE_DIR}" 2>/dev/null || true
+    echo "chrome-agent: stopped"
+    ;;
+
+  *)
+    echo "chrome-agent: unknown command: $CMD" >&2
+    usage >&2
+    exit 64
+    ;;
+esac
