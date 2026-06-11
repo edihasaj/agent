@@ -15,6 +15,13 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
+# Refresh tap metadata before upgrading so brew actually sees new releases
+# (a stale local tap clone otherwise reports "already installed").
+if [ "$upgrade" = 1 ]; then
+  echo "==> brew update"
+  brew update >/dev/null 2>&1 || true
+fi
+
 # Fully-qualified formula ref : on-PATH command name.
 fleet=(
   "edihasaj/tap/vmlab:vmlab"        # cross-OS verify orchestrator
@@ -36,6 +43,19 @@ for entry in "${fleet[@]}"; do
   else
     echo "==> installing $ref"
     brew install "$ref"
+  fi
+
+  # Self-heal a shadowed keg: an old install-script can leave bin/<cmd>
+  # pointing at an app bundle / stale binary, so brew upgrades the keg but the
+  # wrong version stays on PATH. Relink the brew keg so it wins.
+  kegver="$(brew list --versions "$name" 2>/dev/null | awk '{print $2}')"
+  pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+  if [ -n "$kegver" ] && [ "$kegver" != "$pathver" ]; then
+    echo "    note: $cmd on PATH ($pathver) shadows brew keg ($kegver) — relinking"
+    brew link --overwrite --force "$name" >/dev/null 2>&1 || true
+    hash -r 2>/dev/null || true
+    pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+    [ "$kegver" = "$pathver" ] || echo "    warn: $cmd still $pathver after relink — a non-brew copy earlier in PATH may shadow it"
   fi
 done
 
