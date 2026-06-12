@@ -60,7 +60,7 @@ for entry in "${fleet[@]}"; do
   # pointing at an app bundle / stale binary, so brew upgrades the keg but the
   # wrong version stays on PATH. Relink the brew keg so it wins.
   kegver="$(brew list --versions "$name" 2>/dev/null | awk '{print $2}')"
-  pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+  pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
   if [ -n "$kegver" ] && [ "$kegver" != "$pathver" ]; then
     echo "    note: $cmd on PATH ($pathver) shadows brew keg ($kegver) — relinking"
     brew link --overwrite --force "$name" >/dev/null 2>&1 || true
