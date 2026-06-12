@@ -65,7 +65,7 @@ for entry in "${fleet[@]}"; do
     echo "    note: $cmd on PATH ($pathver) shadows brew keg ($kegver) — relinking"
     brew link --overwrite --force "$name" >/dev/null 2>&1 || true
     hash -r 2>/dev/null || true
-    pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+    pathver="$("$cmd" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true)"
     [ "$kegver" = "$pathver" ] || echo "    warn: $cmd still $pathver after relink — a non-brew copy earlier in PATH may shadow it"
   fi
 done
