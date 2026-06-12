@@ -15,6 +15,12 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 1
 fi
 
+# Homebrew 6.0 enforces tap-trust by default, which fails the build subprocess
+# (bare exit 1) for our unbottled taps (edihasaj/*) and doesn't honor `brew
+# trust`/trust.json on that path. Scope the bypass to THIS script's brew calls
+# so fleet installs work everywhere without a machine-wide change.
+export HOMEBREW_NO_REQUIRE_TAP_TRUST=1
+
 # Refresh tap metadata before upgrading so brew actually sees new releases
 # (a stale local tap clone otherwise reports "already installed").
 if [ "$upgrade" = 1 ]; then
