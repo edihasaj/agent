@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap the agent fleet CLIs via Homebrew.
+# Bootstrap the agent fleet CLIs.
 # Installs anything missing; pass --upgrade to also bump already-installed
 # formulas to the latest. Idempotent: safe to re-run.
 #
@@ -35,6 +35,11 @@ fleet=(
   "edihasaj/abx/abx:abx"            # headless browser CLI
 )
 
+if ! command -v bun >/dev/null 2>&1; then
+  echo "==> installing bun"
+  brew install bun
+fi
+
 for entry in "${fleet[@]}"; do
   ref="${entry%%:*}"
   cmd="${entry##*:}"
@@ -65,6 +70,27 @@ for entry in "${fleet[@]}"; do
   fi
 done
 
+# shotport is private/source-built for now. Keep it in ~/Projects and install
+# the standalone compiled binary into /opt/homebrew/bin.
+if command -v shotport >/dev/null 2>&1 && [ "$upgrade" != 1 ]; then
+  echo "==> shotport present ($(shotport --version 2>/dev/null | head -1))"
+else
+  shotport_dir="$HOME/Projects/shotport"
+  if [ -d "$shotport_dir/.git" ]; then
+    echo "==> updating shotport"
+    git -C "$shotport_dir" pull --ff-only || echo "warn: shotport pull failed — resolve $shotport_dir manually"
+  else
+    echo "==> cloning shotport"
+    mkdir -p "$HOME/Projects"
+    git clone https://github.com/edihasaj/shotport.git "$shotport_dir"
+  fi
+
+  if [ -d "$shotport_dir" ]; then
+    echo "==> building shotport"
+    (cd "$shotport_dir" && bun install && bun run install:local)
+  fi
+fi
+
 # abx drives Playwright's Chromium — fetch it once if the cache is empty.
 if command -v abx >/dev/null 2>&1; then
   browsers="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/Library/Caches/ms-playwright}"
@@ -80,6 +106,7 @@ Fleet ready:
   vmlab    — cross-OS verify orchestrator     (vmlab doctor)
   guiport  — macOS desktop driver             (grant TCC: guiport doctor --fix)
   abx      — headless browser CLI             (abx --help)
+  shotport — token-cheap screenshots          (shotport --help)
 
 Re-run with --upgrade to bump everything to the latest.
 EOS
