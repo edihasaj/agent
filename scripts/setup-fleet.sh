@@ -70,8 +70,9 @@ for entry in "${fleet[@]}"; do
   fi
 done
 
-# shotport is private/source-built for now. Keep it in ~/Projects and install
-# the standalone compiled binary into /opt/homebrew/bin.
+# shotport is open-source but source-built (no Homebrew bottle yet): clone the
+# public repo into ~/Projects and install the standalone compiled binary into
+# /opt/homebrew/bin via `bun run install:local`.
 if command -v shotport >/dev/null 2>&1 && [ "$upgrade" != 1 ]; then
   echo "==> shotport present ($(shotport --version 2>/dev/null | head -1))"
 else
