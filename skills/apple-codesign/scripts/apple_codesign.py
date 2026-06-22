@@ -36,7 +36,9 @@ from __future__ import annotations
 import argparse
 import base64
 import datetime as dt
+import json
 import os
+import plistlib
 import secrets
 import shutil
 import subprocess
@@ -68,6 +70,8 @@ DEFAULT_VAULT = os.environ.get("OP_VAULT", "Private")  # set OP_VAULT (e.g. ~/.p
 DEFAULT_API_ITEM = os.environ.get("OP_API_ITEM", "Apple Admin API Key")
 DEFAULT_CERT_ITEM = os.environ.get("OP_CERT_ITEM", "Apple Developer ID Application")
 DEFAULT_PROFILE = os.environ.get("NOTARY_PROFILE", "asc-notary")
+DEFAULT_KEYCHAIN = os.environ.get(
+    "SIGNING_KEYCHAIN", os.path.expanduser("~/Library/Keychains/apple-codesign.keychain-db"))
 INTERMEDIATE_CA = "https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer"
 
 
@@ -268,75 +272,124 @@ def cmd_stash_devid(a):
     _stash_p12(a.vault, a.cert_item, dest, pw)
 
 
-def _keychain() -> str:
-    return os.path.expanduser("~/Library/Keychains/login.keychain-db")
+def _add_to_search_list(kc: str):
+    """Prepend the dedicated keychain to the user search list (keeping the rest)."""
+    cur = run(["security", "list-keychains", "-d", "user"]).stdout
+    paths = [ln.strip().strip('"') for ln in cur.splitlines() if ln.strip()]
+    if kc not in paths:
+        run(["security", "list-keychains", "-d", "user", "-s", kc, *paths])
 
 
 def cmd_setup(a):
-    """Pull Developer ID cert + notary API key from 1Password onto this machine."""
-    # 1. Developer ID cert → keychain
+    """Pull the Developer ID cert + notary key from 1Password into a dedicated,
+    fully-controlled signing keychain (headless-safe — never touches login)."""
+    kc = a.keychain
     info("importing Developer ID certificate from 1Password…")
     p12 = os.path.join(tempfile.mkdtemp(), "developer-id.p12")
     if not op_read(f"op://{a.vault}/{a.cert_item}/developer-id.p12", out_file=p12):
         die(f"no developer-id.p12 in op://{a.vault}/{a.cert_item} — create + stash it first (`devid`)")
     pw = op_read(f"op://{a.vault}/{a.cert_item}/password") or ""
+
+    # Dedicated keychain, unlocked with the p12 password (strong, fetchable, reproducible).
+    # Reset each run so it's idempotent and never accumulates stale keys.
+    run(["security", "delete-keychain", kc])  # ignore if absent
+    c = run(["security", "create-keychain", "-p", pw, kc])
+    if c.returncode != 0:
+        die(f"create-keychain failed: {c.stderr.strip()}")
+    run(["security", "set-keychain-settings", kc])          # no auto-lock timeout
+    run(["security", "unlock-keychain", "-p", pw, kc])
+
     intermediate = os.path.join(tempfile.gettempdir(), "DeveloperIDG2CA.cer")
     try:
         with requests.get(INTERMEDIATE_CA, timeout=15) as resp:
             open(intermediate, "wb").write(resp.content)
-        run(["security", "import", intermediate, "-k", _keychain()])
+        run(["security", "import", intermediate, "-k", kc])
     except Exception:
         pass
-    imp = run(["security", "import", p12, "-k", _keychain(), "-P", pw,
-               "-T", "/usr/bin/codesign", "-T", "/usr/bin/security"])
-    if imp.returncode != 0 and "already exists" not in (imp.stderr or ""):
+    imp = run(["security", "import", p12, "-k", kc, "-P", pw,
+               "-A", "-T", "/usr/bin/codesign", "-T", "/usr/bin/security"])
+    if imp.returncode != 0:
         die(f"keychain import failed: {imp.stderr.strip()}")
+    # let codesign use the private key non-interactively
+    run(["security", "set-key-partition-list", "-S", "apple-tool:,apple:", "-s", "-k", pw, kc])
+    _add_to_search_list(kc)
 
-    # 2. notary credentials → notarytool profile
     info("storing notary API key…")
     key_id, issuer, p8 = resolve_api_key(a.vault, a.api_item)
     sc = run(["xcrun", "notarytool", "store-credentials", a.profile,
-              "--key", p8, "--key-id", key_id, "--issuer", issuer])
+              "--key", p8, "--key-id", key_id, "--issuer", issuer, "--keychain", kc])
     if sc.returncode != 0:
         die(f"notarytool store-credentials failed: {sc.stderr.strip()}")
 
-    ident = _find_identity()
-    if ident:
-        ok(f"ready — signing identity '{ident}', notary profile '{a.profile}'")
+    found = _find_identity(kc)
+    if found:
+        ok(f"ready — identity '{found[1]}', notary profile '{a.profile}', keychain {os.path.basename(kc)}")
     else:
         die("Developer ID identity not found after import")
 
 
-def _find_identity() -> str | None:
-    r = run(["security", "find-identity", "-v", "-p", "codesigning"])
-    for line in r.stdout.splitlines():
-        if "Developer ID Application" in line:
-            # line: '  1) ABC… "Developer ID Application: Name (TEAMID)"'
-            return line.split('"')[1] if '"' in line else "Developer ID Application"
+def _find_identity(keychain: str | None = None) -> tuple[str, str] | None:
+    """Return (sha1, name) of a Developer ID Application identity. When `keychain`
+    is given, search only it — and return the SHA-1 so signing is unambiguous even
+    if other keychains hold an identically-named cert."""
+    cmd = ["security", "find-identity", "-v", "-p", "codesigning"]
+    if keychain:
+        cmd.append(keychain)
+    for line in run(cmd).stdout.splitlines():
+        if "Developer ID Application" in line and '"' in line:
+            # '  1) <SHA1> "Developer ID Application: Name (TEAMID)"'
+            parts = line.split()
+            sha1 = parts[1] if len(parts) > 1 else ""
+            return sha1, line.split('"')[1]
     return None
 
 
+def _clean_entitlements(target: str) -> str | None:
+    """Dump the target's entitlements, strip the debug-only get-task-allow (which
+    Apple rejects at notarization), and return a temp plist path — or None if there
+    are no entitlements to preserve."""
+    r = run(["codesign", "-d", "--entitlements", "-", "--xml", target])
+    raw = (r.stdout or "").encode()
+    idx = raw.find(b"<?xml")
+    if idx == -1:
+        return None
+    try:
+        ent = plistlib.loads(raw[idx:])
+    except Exception:
+        return None
+    if not ent:
+        return None
+    ent.pop("com.apple.security.get-task-allow", None)
+    out = os.path.join(tempfile.mkdtemp(), "entitlements.plist")
+    with open(out, "wb") as f:
+        plistlib.dump(ent, f)
+    return out
+
+
 def cmd_sign(a):
-    ident = a.identity or _find_identity()
-    if not ident:
-        die("no Developer ID Application identity in keychain — run `setup`")
+    if a.identity:
+        ident, label = a.identity, a.identity
+    else:
+        found = _find_identity(getattr(a, "keychain", None))
+        if not found:
+            die("no Developer ID Application identity found — run `setup`")
+        ident, label = found  # sign by SHA-1 → unambiguous across keychains
     target = a.path
     if not os.path.exists(target):
         die(f"not found: {target}")
-    info(f"codesign (hardened runtime) → {target}")
+    info(f"codesign (hardened runtime) → {target}  [{label}]")
     cmd = ["codesign", "--force", "--timestamp", "--options", "runtime", "--sign", ident]
     if a.deep:  # legacy nested signing — discouraged, opt-in only
         cmd.append("--deep")
-    if a.entitlements:
-        cmd += ["--entitlements", a.entitlements]
-    else:
-        cmd.append("--preserve-metadata=entitlements")
+    ent = a.entitlements or _clean_entitlements(target)
+    if ent:
+        cmd += ["--entitlements", ent]
     cmd.append(target)
     r = run(cmd)
     if r.returncode != 0:
         die(f"codesign failed: {r.stderr.strip()}")
     v = run(["codesign", "--verify", "--strict", "--verbose=2", target])
-    ok(f"signed + verified: {ident}")
+    ok(f"signed + verified: {label}")
     if v.stderr:
         print(v.stderr.strip())
 
@@ -356,18 +409,34 @@ def cmd_notarize(a):
             die(f"ditto zip failed: {z.stderr.strip()}")
         cleanup = submit
     info(f"submitting to notary service (profile {a.profile})…")
-    r = subprocess.run(["xcrun", "notarytool", "submit", submit,
-                        "--keychain-profile", a.profile, "--wait"], text=True)
-    if r.returncode != 0:
-        die("notarization failed (see log above)")
+    cmd = ["xcrun", "notarytool", "submit", submit, "--keychain-profile", a.profile,
+           "--wait", "--output-format", "json"]
+    if getattr(a, "keychain", None):
+        cmd += ["--keychain", a.keychain]
+    r = run(cmd)
+    try:
+        result = json.loads(r.stdout)
+    except Exception:
+        die(f"could not parse notarytool output: {r.stdout or r.stderr}")
+    sid, status = result.get("id"), result.get("status")
+    if status != "Accepted":
+        # notarytool exits 0 even when the verdict is Invalid — surface Apple's reasons.
+        if sid:
+            log = run(["xcrun", "notarytool", "log", sid, "--keychain-profile", a.profile]
+                      + (["--keychain", a.keychain] if getattr(a, "keychain", None) else []))
+            print(log.stdout.strip()[:4000])
+        if cleanup and os.path.exists(cleanup):
+            os.remove(cleanup)
+        die(f"notarization {status} (id {sid})")
+    ok(f"notarization Accepted (id {sid})")
     # staple the original artifact (.app/.dmg/.pkg), never the throwaway zip
+    if cleanup and os.path.exists(cleanup):
+        os.remove(cleanup)
     s = run(["xcrun", "stapler", "staple", target])
     if s.returncode == 0:
         ok(f"notarized + stapled: {target}")
     else:
-        print(f"⚠ notarized but staple skipped ({s.stderr.strip()}) — zips can't be stapled; staple the .app/.dmg")
-    if cleanup and os.path.exists(cleanup):
-        os.remove(cleanup)
+        print(f"⚠ stapled failed ({s.stderr.strip()}) — re-run `stapler staple {target}`")
 
 
 def cmd_run(a):
@@ -390,6 +459,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--api-item", default=DEFAULT_API_ITEM, help="1Password API-key item")
     p.add_argument("--cert-item", default=DEFAULT_CERT_ITEM, help="1Password Developer ID cert item")
     p.add_argument("--profile", default=DEFAULT_PROFILE, help="notarytool keychain profile")
+    p.add_argument("--keychain", default=DEFAULT_KEYCHAIN,
+                   help="dedicated signing keychain (created by `setup`; never the login keychain)")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sub.add_parser("whoami", help="authenticate the API key + list the team's certs").set_defaults(func=cmd_whoami)

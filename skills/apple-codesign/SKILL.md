@@ -82,8 +82,8 @@ CLAUDE.md (single item/field, no diagnostics).
 | `issue <TYPE> [--out --cn --stash]` | Generate CSR + request an API-creatable cert → `.p12` |
 | `devid` | Developer ID status + one-time creation guidance |
 | `stash-devid <p12> [--password]` | Store an exported Developer ID `.p12` in 1Password |
-| `setup` | Import cert + notary key from 1Password onto this machine |
-| `sign <app> [--identity --entitlements --deep]` | codesign with hardened runtime + verify |
+| `setup` | Build a dedicated signing keychain from 1Password (cert + notary key) — headless, never touches login |
+| `sign <app> [--identity --entitlements --deep]` | codesign by SHA-1 (unambiguous) w/ hardened runtime; strips debug `get-task-allow`; verifies |
 | `notarize <app\|dmg\|pkg\|zip>` | notarytool submit `--wait` + staple |
 | `run <app>` | sign → notarize → staple → `spctl` assess |
 
@@ -98,6 +98,16 @@ feed `ASC_*` env + import the Developer ID `.p12` from a base64 secret (see
 
 - Needs: `uv` (Python deps), `op` (1Password), Xcode CLT (`codesign`, `xcrun notarytool`,
   `stapler`, `spctl`, `security`, `ditto`).
-- Never re-signs / changes bundle IDs implicitly — `sign` only attaches a Developer ID
-  signature + hardened runtime (TCC-safe).
-- `notarize` zips a bare `.app` for submission, then staples the original artifact.
+- `setup` builds a **dedicated** keychain (`~/Library/Keychains/apple-codesign.keychain-db`,
+  override `--keychain` / `SIGNING_KEYCHAIN`), unlocked with the cert's own password and
+  partition-listed so `codesign` never prompts. It never imports into your **login**
+  keychain — so it's safe headless (CI, SSH, tmux) where login is locked.
+- `sign` signs by the cert's **SHA-1** (not name) so it stays unambiguous even when several
+  keychains hold an identically-named Developer ID cert. It also strips the debug-only
+  `com.apple.security.get-task-allow` entitlement, which Apple rejects at notarization.
+- `notarize` parses the JSON verdict — `notarytool` exits 0 even on `Invalid`, so it fetches
+  and prints Apple's `notarytool log` reasons and fails loudly instead of false-success.
+- Never changes bundle IDs implicitly — `sign` only attaches a Developer ID signature +
+  hardened runtime (TCC-safe).
+- Proven end-to-end on ZoomClip: build → sign → notarize (Accepted) → staple → Gatekeeper
+  `accepted / source=Notarized Developer ID`.
