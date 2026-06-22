@@ -18,8 +18,9 @@ What it CANNOT do (Apple policy — Account-Holder identity only, no API key hol
 
 Credentials are resolved in this order:
   1. env: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_PATH (.p8)
-  2. 1Password item (default: op://redacted/Apple Admin API Key) with
-     fields "Key ID" + "Issuer ID" and an attached file AuthKey_<KeyID>.p8
+  2. 1Password item (op://$OP_VAULT/Apple Admin API Key) with fields
+     "Key ID" + "Issuer ID" and an attached file AuthKey_<KeyID>.p8
+     Set OP_VAULT (e.g. in ~/.profile) or pass --vault to pick the vault.
 
 Examples:
   apple-codesign whoami
@@ -63,9 +64,9 @@ CERT_TYPES = {
 }
 ACCOUNT_HOLDER_ONLY = {"DEVELOPER_ID_APPLICATION", "DEVELOPER_ID_KEXT"}
 
-DEFAULT_VAULT = os.environ.get("OP_VAULT", "redacted")
+DEFAULT_VAULT = os.environ.get("OP_VAULT", "Private")  # set OP_VAULT (e.g. ~/.profile) to your vault
 DEFAULT_API_ITEM = os.environ.get("OP_API_ITEM", "Apple Admin API Key")
-DEFAULT_CERT_ITEM = os.environ.get("OP_CERT_ITEM", "Developer ID Application")
+DEFAULT_CERT_ITEM = os.environ.get("OP_CERT_ITEM", "Apple Developer ID Application")
 DEFAULT_PROFILE = os.environ.get("NOTARY_PROFILE", "asc-notary")
 INTERMEDIATE_CA = "https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer"
 

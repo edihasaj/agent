@@ -11,7 +11,8 @@ description: >
 # apple-codesign (Edi)
 
 One CLI for the whole Apple signing chain, app-agnostic. Credentials live in 1Password
-(`Apple Admin API Key`, vault `redacted`); the Developer ID cert is created once and reused.
+(`Apple Admin API Key`); the Developer ID cert is created once and reused. Pick the vault
+with `OP_VAULT` (set it in your private `~/.profile`) or `--vault`.
 
 ```bash
 apple-codesign --help          # via uv launcher (scripts/apple-codesign)
@@ -41,7 +42,7 @@ apple-codesign whoami            # confirm key works; see if a Developer ID cert
 apple-codesign devid             # if none: prints the 30-second Xcode creation steps
 # create it in Xcode ▸ Settings ▸ Accounts ▸ Manage Certificates ▸ + ▸ Developer ID Application
 # export it from Keychain Access as .p12, then:
-apple-codesign stash-devid ~/Downloads/DeveloperID.p12     # → op://redacted/Developer ID Application
+apple-codesign stash-devid ~/Downloads/DeveloperID.p12     # → op://$OP_VAULT/Apple Developer ID Application
 ```
 
 **Any machine / CI (per machine, once):**
