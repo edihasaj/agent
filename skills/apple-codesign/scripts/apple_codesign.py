@@ -443,8 +443,12 @@ def cmd_run(a):
     """Full pipeline: sign → notarize → staple."""
     cmd_sign(a)
     cmd_notarize(a)
-    # gatekeeper assessment for a final sanity check
-    r = run(["spctl", "--assess", "--type", "execute", "--verbose=2", a.path])
+    # Gatekeeper sanity check — disk images/installers assess as 'open', apps as 'execute'.
+    if a.path.endswith((".dmg", ".pkg")):
+        cmd = ["spctl", "-a", "-t", "open", "--context", "context:primary-signature", "-v", a.path]
+    else:
+        cmd = ["spctl", "--assess", "--type", "execute", "--verbose=2", a.path]
+    r = run(cmd)
     out = (r.stderr or r.stdout).strip()
     print(out)
     if "accepted" in out:
