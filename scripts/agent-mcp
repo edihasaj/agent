@@ -27,6 +27,7 @@ Profiles:
   miro             Miro remote MCP via mcp-remote (OAuth browser login)
   slack            Slack remote MCP via mcp-remote (OAuth browser login)
   atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
+  kb             redacted Knowledge Base local stdio MCP (uv run kb serve-mcp)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
@@ -100,6 +101,14 @@ case "$PROFILE" in
 
   guiport)
     exec guiport serve --mcp
+    ;;
+
+  kb)
+    # redacted Knowledge Base local stdio MCP (kb_search/kb_raw/kb_check/...).
+    # Launches the in-repo kb server via uv; DB path pinned to the repo copy.
+    exec env KB_DB_PATH="/Users/edi/Projects/redacted/redacted-knowledge/.poc.db" \
+      uv run --directory /Users/edi/Projects/redacted/redacted-knowledge \
+      kb serve-mcp
     ;;
 
   *)
