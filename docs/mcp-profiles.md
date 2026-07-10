@@ -15,7 +15,7 @@ Use `~/Projects/agent-scripts/bin/agent-mcp <profile>` from global MCP config. K
 - `recall` -> local Recall app MCP runtime
 - `zapfeed` -> `mcp-remote@0.1.38` to `https://zapfeed.io/api/mcp`
 - `miro` -> `mcp-remote@latest` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
-- `slack` -> `mcp-remote@latest` to `https://mcp.slack.com/mcp` (public OAuth client id; browser login, tokens cached in `~/.mcp-auth`)
+- `slack` -> NOT via mcp-remote. The redacted Slack MCP app enforces a fixed redirect-URI allowlist and rejects dynamic client registration, so mcp-remote's random-port `/oauth/callback` never matches (login loops). Use a client with native remote-MCP OAuth (Claude Code / VS Code / GitHub Copilot CLI). Claude Code: `claude mcp add --transport http --client-id redacted --callback-port 8090 -s user slack https://mcp.slack.com/mcp`, then have the Slack-app admin allowlist `http://localhost:8090/callback` (note path is `/callback`, not `/oauth/callback`).
 - `atlassian` -> `mcp-remote@latest` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
 - `guiport` -> `guiport serve --mcp`
 

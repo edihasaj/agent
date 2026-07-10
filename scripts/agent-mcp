@@ -73,18 +73,21 @@ case "$PROFILE" in
     ;;
 
   slack)
-    # Remote HTTP MCP. Slack rejects dynamic client registration, so pass the
-    # published public OAuth client id. Slack's OAuth client only accepts a
-    # fixed redirect-URI allowlist, so pin the callback port (positional arg,
-    # here 3118 — the port Slack allowlists for its MCP client). Without this
-    # mcp-remote picks a random port and Slack rejects the redirect, looping
-    # the browser login. Only one Slack MCP login can hold 3118 at a time.
-    # mcp-remote drives the browser login and caches tokens in ~/.mcp-auth.
-    exec npx -y mcp-remote@latest \
-      https://mcp.slack.com/mcp \
-      3118 \
-      --transport http-first \
-      --static-oauth-client-info '{"client_id":"redacted"}'
+    # DO NOT use mcp-remote for Slack. The redacted Slack MCP app enforces a
+    # fixed redirect-URI allowlist and rejects dynamic client registration.
+    # mcp-remote's callback path is /oauth/callback on a random port, which is
+    # never in the allowlist, so the browser login loops forever.
+    #
+    # Use a client with NATIVE remote-MCP OAuth instead (Claude Code, VS Code,
+    # GitHub Copilot CLI). Native clients pin a fixed callback port and use the
+    # /callback path, which the admin can allowlist. For Claude Code:
+    #   claude mcp add --transport http \
+    #     --client-id redacted --callback-port 8090 \
+    #     -s user slack https://mcp.slack.com/mcp
+    # then ask the Slack-app admin to allowlist http://localhost:8090/callback.
+    echo "agent-mcp: 'slack' is not served via mcp-remote — use native" >&2
+    echo "  Claude Code HTTP transport. See scripts/agent-mcp comments." >&2
+    exit 64
     ;;
 
   atlassian)
