@@ -74,10 +74,15 @@ case "$PROFILE" in
 
   slack)
     # Remote HTTP MCP. Slack rejects dynamic client registration, so pass the
-    # published public OAuth client id. mcp-remote drives the browser login and
-    # caches tokens in ~/.mcp-auth.
+    # published public OAuth client id. Slack's OAuth client only accepts a
+    # fixed redirect-URI allowlist, so pin the callback port (positional arg,
+    # here 3118 — the port Slack allowlists for its MCP client). Without this
+    # mcp-remote picks a random port and Slack rejects the redirect, looping
+    # the browser login. Only one Slack MCP login can hold 3118 at a time.
+    # mcp-remote drives the browser login and caches tokens in ~/.mcp-auth.
     exec npx -y mcp-remote@latest \
       https://mcp.slack.com/mcp \
+      3118 \
       --transport http-first \
       --static-oauth-client-info '{"client_id":"redacted"}'
     ;;
