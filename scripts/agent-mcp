@@ -26,6 +26,7 @@ Profiles:
   zapfeed          Zapfeed remote MCP via mcp-remote + ZAPFEED_API_KEY
   miro             Miro remote MCP via mcp-remote (OAuth browser login)
   slack            Slack remote MCP via mcp-remote (OAuth browser login)
+  atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
@@ -79,6 +80,14 @@ case "$PROFILE" in
       https://mcp.slack.com/mcp \
       --transport http-first \
       --static-oauth-client-info '{"client_id":"redacted"}'
+    ;;
+
+  atlassian)
+    # Remote SSE MCP for Jira + Confluence. Atlassian supports dynamic client
+    # registration, so mcp-remote's browser login works; tokens cached in
+    # ~/.mcp-auth.
+    exec npx -y mcp-remote@latest \
+      https://mcp.atlassian.com/v1/sse
     ;;
 
   guiport)
