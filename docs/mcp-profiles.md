@@ -18,6 +18,7 @@ Use `~/Projects/agent-scripts/bin/agent-mcp <profile>` from global MCP config. K
 - `slack` -> NOT via mcp-remote. The redacted Slack MCP app enforces a fixed redirect-URI allowlist and rejects dynamic client registration, so mcp-remote's random-port `/oauth/callback` never matches (login loops). Use a client with native remote-MCP OAuth (Claude Code / VS Code / GitHub Copilot CLI). Claude Code: `claude mcp add --transport http --client-id redacted --callback-port 8090 -s user slack https://mcp.slack.com/mcp`, then have the Slack-app admin allowlist `http://localhost:8090/callback` (note path is `/callback`, not `/oauth/callback`).
 - `atlassian` -> `mcp-remote@latest` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
 - `kb` -> redacted Knowledge Base local stdio MCP: `uv run --directory ~/Projects/redacted/redacted-knowledge kb serve-mcp` (tools: `kb_search`, `kb_raw`, `kb_check`, `kb_review`, ...; `KB_DB_PATH` pinned to the repo `.poc.db`)
+- `stripe` -> `mcp-remote@latest` to `https://mcp.stripe.com` (Stripe hosted MCP; OAuth 2.1 browser login, tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
 - `guiport` -> `guiport serve --mcp`
 
 ## Secrets

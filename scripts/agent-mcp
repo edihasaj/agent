@@ -28,6 +28,7 @@ Profiles:
   slack            Slack remote MCP via mcp-remote (OAuth browser login)
   atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
   kb             redacted Knowledge Base local stdio MCP (uv run kb serve-mcp)
+  stripe           Stripe hosted remote MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
@@ -97,6 +98,17 @@ case "$PROFILE" in
     # ~/.mcp-auth.
     exec npx -y mcp-remote@latest \
       https://mcp.atlassian.com/v1/sse
+    ;;
+
+  stripe)
+    # Stripe hosted remote MCP with OAuth 2.1 browser login; tokens cached in
+    # ~/.mcp-auth. No API key needed. Stripe's OAuth server only supports the
+    # "mcp" scope and rejects mcp-remote's default openid/email/profile scopes,
+    # so we override the registered client metadata to request just "mcp".
+    exec npx -y mcp-remote@latest \
+      https://mcp.stripe.com \
+      --transport http-first \
+      --static-oauth-client-metadata '{"scope":"mcp"}'
     ;;
 
   guiport)
