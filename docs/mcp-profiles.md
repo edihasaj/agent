@@ -14,6 +14,8 @@ Use `~/Projects/agent-scripts/bin/agent-mcp <profile>` from global MCP config. K
 - `chrome-devtools` -> `npx -y chrome-devtools-mcp@latest --autoConnect`
 - `recall` -> local Recall app MCP runtime
 - `zapfeed` -> `mcp-remote@0.1.38` to `https://zapfeed.io/api/mcp`
+- `miro` -> `mcp-remote@latest` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
+- `slack` -> `mcp-remote@latest` to `https://mcp.slack.com/mcp` (public OAuth client id; browser login, tokens cached in `~/.mcp-auth`)
 - `guiport` -> `guiport serve --mcp`
 
 ## Secrets

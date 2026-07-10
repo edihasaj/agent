@@ -24,6 +24,8 @@ Profiles:
   chrome-devtools  Chrome DevTools MCP attached to the live Chrome session
   recall           Recall local MCP
   zapfeed          Zapfeed remote MCP via mcp-remote + ZAPFEED_API_KEY
+  miro             Miro remote MCP via mcp-remote (OAuth browser login)
+  slack            Slack remote MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
@@ -59,6 +61,24 @@ case "$PROFILE" in
       --transport http-first \
       --header 'Authorization:${AUTH_HEADER}' \
       --silent
+    ;;
+
+  miro)
+    # Remote HTTP MCP with OAuth 2.1 (dynamic client registration).
+    # mcp-remote drives the browser login and caches tokens in ~/.mcp-auth.
+    exec npx -y mcp-remote@latest \
+      https://mcp.miro.com/ \
+      --transport http-first
+    ;;
+
+  slack)
+    # Remote HTTP MCP. Slack rejects dynamic client registration, so pass the
+    # published public OAuth client id. mcp-remote drives the browser login and
+    # caches tokens in ~/.mcp-auth.
+    exec npx -y mcp-remote@latest \
+      https://mcp.slack.com/mcp \
+      --transport http-first \
+      --static-oauth-client-info '{"client_id":"redacted"}'
     ;;
 
   guiport)
