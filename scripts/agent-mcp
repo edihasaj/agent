@@ -27,17 +27,22 @@ Profiles:
   miro             Miro remote MCP via mcp-remote (OAuth browser login)
   slack            Slack remote MCP via mcp-remote (OAuth browser login)
   atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
-  kb             redacted Knowledge Base local stdio MCP (uv run kb serve-mcp)
   stripe           Stripe hosted remote MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
+Private/org-specific profiles live in ~/Projects/manager/config/agent-mcp-private.
 USAGE
 }
 
 if [[ -z "$PROFILE" || "$PROFILE" == "-h" || "$PROFILE" == "--help" ]]; then
   usage
   exit 0
+fi
+
+PRIVATE_OVERLAY="$HOME/Projects/manager/config/agent-mcp-private"
+if [[ -x "$PRIVATE_OVERLAY" ]] && "$PRIVATE_OVERLAY" --has "$PROFILE" 2>/dev/null; then
+  exec "$PRIVATE_OVERLAY" "$PROFILE"
 fi
 
 case "$PROFILE" in
@@ -75,18 +80,15 @@ case "$PROFILE" in
     ;;
 
   slack)
-    # DO NOT use mcp-remote for Slack. The redacted Slack MCP app enforces a
-    # fixed redirect-URI allowlist and rejects dynamic client registration.
-    # mcp-remote's callback path is /oauth/callback on a random port, which is
-    # never in the allowlist, so the browser login loops forever.
+    # DO NOT use mcp-remote for Slack. Workspace Slack MCP apps commonly
+    # enforce a fixed redirect-URI allowlist and reject dynamic client
+    # registration; mcp-remote's callback path is /oauth/callback on a random
+    # port, which is never in the allowlist, so the browser login loops.
     #
     # Use a client with NATIVE remote-MCP OAuth instead (Claude Code, VS Code,
-    # GitHub Copilot CLI). Native clients pin a fixed callback port and use the
-    # /callback path, which the admin can allowlist. For Claude Code:
-    #   claude mcp add --transport http \
-    #     --client-id redacted --callback-port 8090 \
-    #     -s user slack https://mcp.slack.com/mcp
-    # then ask the Slack-app admin to allowlist http://localhost:8090/callback.
+    # GitHub Copilot CLI): pin a fixed callback port + /callback path and have
+    # the Slack-app admin allowlist it. Workspace-specific client ids live in
+    # the private overlay (see usage).
     echo "agent-mcp: 'slack' is not served via mcp-remote — use native" >&2
     echo "  Claude Code HTTP transport. See scripts/agent-mcp comments." >&2
     exit 64
@@ -113,14 +115,6 @@ case "$PROFILE" in
 
   guiport)
     exec guiport serve --mcp
-    ;;
-
-  kb)
-    # redacted Knowledge Base local stdio MCP (kb_search/kb_raw/kb_check/...).
-    # Launches the in-repo kb server via uv; DB path pinned to the repo copy.
-    exec env KB_DB_PATH="/Users/edi/Projects/redacted/redacted-knowledge/.poc.db" \
-      uv run --directory /Users/edi/Projects/redacted/redacted-knowledge \
-      kb serve-mcp
     ;;
 
   *)
