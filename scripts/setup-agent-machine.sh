@@ -124,6 +124,11 @@ else
 fi
 
 if have shotport; then
+  run_doctor_until_ok \
+    "shotport Screen Recording" \
+    "shotport doctor" \
+    "shotport doctor >/dev/null 2>&1" \
+    "Approve shotport in System Settings → Privacy & Security → Screen Recording."
   step "shotport smoke"
   shotport browser https://example.com --text-only >/dev/null || warn "shotport browser smoke failed"
   shotport desktop --budget 900 --jpeg >/dev/null || warn "shotport desktop smoke failed"
