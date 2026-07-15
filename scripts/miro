@@ -1,0 +1,131 @@
+#!/usr/bin/env node
+// Miro REST helper — fills the gaps in Miro's hosted MCP (no delete, no move).
+// Auth: MIRO_TOKEN (OAuth token from a Miro app with boards:read + boards:write).
+// Usage:
+//   miro whoami
+//   miro list   <boardUrlOrId> [--type table|shape|frame|...] [--limit N]
+//   miro get    <boardUrlOrId> <itemId>
+//   miro delete <boardUrlOrId> <itemId> [<itemId> ...]
+//   miro move   <boardUrlOrId> <itemId> --x <n> --y <n>
+//   miro board-delete <boardUrlOrId>
+//
+// Tables (type "data_table_format") are handled by the generic /items endpoint —
+// delete and move both work on them. Verified against a scratch board.
+//
+// Board id is read from a full board URL (…/board/<id>/…) or passed directly.
+// Item ids are the moveToWidget=<id> values you already see in the MCP output.
+
+const API = 'https://api.miro.com/v2';
+const TOKEN = process.env.MIRO_TOKEN;
+
+function die(msg, code = 1) {
+  console.error(`miro: ${msg}`);
+  process.exit(code);
+}
+
+if (!TOKEN) {
+  die('MIRO_TOKEN not set. Add `export MIRO_TOKEN="…"` to ~/.profile (app scopes: boards:read, boards:write).', 78);
+}
+
+// Accept a full board URL or a bare id. Board ids often end in "=".
+function boardId(arg) {
+  if (!arg) die('missing <boardUrlOrId>');
+  const m = arg.match(/board\/([^/?#]+)/);
+  const id = m ? m[1] : arg;
+  return decodeURIComponent(id); // normalise, then re-encode per request
+}
+
+// Item id from a bare id or a ?moveToWidget=<id> URL.
+function itemId(arg) {
+  const m = String(arg).match(/moveToWidget=([0-9]+)/);
+  return m ? m[1] : String(arg);
+}
+
+async function api(method, path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  const text = await res.text();
+  let json;
+  try { json = text ? JSON.parse(text) : null; } catch { json = text; }
+  if (!res.ok) {
+    const detail = json && json.message ? json.message : text;
+    die(`${method} ${path} -> ${res.status} ${detail}`, 2);
+  }
+  return json;
+}
+
+function flag(args, name) {
+  const i = args.indexOf(name);
+  return i >= 0 ? args[i + 1] : undefined;
+}
+
+async function main() {
+  const [cmd, ...rest] = process.argv.slice(2);
+  switch (cmd) {
+    case 'whoami': {
+      // Cheapest authenticated call: list boards (1 result).
+      const out = await api('GET', '/boards?limit=1');
+      const total = out && out.total != null ? out.total : '?';
+      console.log(`ok — token valid, ${total} boards visible`);
+      break;
+    }
+    case 'list': {
+      const bid = encodeURIComponent(boardId(rest[0]));
+      const type = flag(rest, '--type');
+      const limit = flag(rest, '--limit') || '50';
+      const q = new URLSearchParams({ limit });
+      if (type) q.set('type', type);
+      const out = await api('GET', `/boards/${bid}/items?${q}`);
+      for (const it of out.data || []) {
+        const p = it.position || {};
+        const label = (it.data && (it.data.title || it.data.content)) || it.type;
+        console.log(`${it.id}\t${it.type}\tx=${p.x ?? '?'}\ty=${p.y ?? '?'}\t${String(label).slice(0, 50)}`);
+      }
+      break;
+    }
+    case 'get': {
+      const bid = encodeURIComponent(boardId(rest[0]));
+      const iid = itemId(rest[1]);
+      console.log(JSON.stringify(await api('GET', `/boards/${bid}/items/${iid}`), null, 2));
+      break;
+    }
+    case 'delete': {
+      const bid = encodeURIComponent(boardId(rest[0]));
+      const ids = rest.slice(1).filter((a) => !a.startsWith('--')).map(itemId);
+      if (!ids.length) die('delete needs at least one <itemId>');
+      for (const iid of ids) {
+        await api('DELETE', `/boards/${bid}/items/${iid}`);
+        console.log(`deleted ${iid}`);
+      }
+      break;
+    }
+    case 'move': {
+      const bid = encodeURIComponent(boardId(rest[0]));
+      const iid = itemId(rest[1]);
+      const x = flag(rest, '--x');
+      const y = flag(rest, '--y');
+      if (x == null || y == null) die('move needs --x and --y');
+      await api('PATCH', `/boards/${bid}/items/${iid}`, { position: { x: Number(x), y: Number(y) } });
+      console.log(`moved ${iid} -> x=${x} y=${y}`);
+      break;
+    }
+    case 'board-delete': {
+      const bid = encodeURIComponent(boardId(rest[0]));
+      await api('DELETE', `/boards/${bid}`);
+      console.log(`deleted board ${boardId(rest[0])}`);
+      break;
+    }
+    default:
+      console.error('usage: miro whoami | list <board> [--type T] | get <board> <id> | delete <board> <id...> | move <board> <id> --x N --y N | board-delete <board>');
+      process.exit(64);
+  }
+}
+
+main().catch((e) => die(e.message || String(e)));
