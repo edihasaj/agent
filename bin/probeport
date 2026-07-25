@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+probeport_dir="${PROBEPORT_HOME:-$HOME/Projects/probeport}"
+probeport_cli="$probeport_dir/dist/src/cli.js"
+
+if [ ! -f "$probeport_cli" ]; then
+  echo "probeport: build missing; run ~/Projects/agent-scripts/scripts/setup-fleet.sh" >&2
+  exit 1
+fi
+
+exec node "$probeport_cli" "$@"

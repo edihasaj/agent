@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bootstrap the agent fleet CLIs.
+# Bootstrap the agent fleet and QA CLIs.
 # Installs anything missing; pass --upgrade to also bump already-installed
 # formulas to the latest. Idempotent: safe to re-run.
 #
@@ -92,6 +92,41 @@ else
   fi
 fi
 
+# Probeport is private and source-built. The stable agent-scripts wrapper keeps
+# invocation identical across agent runtimes while this checkout owns the
+# versioned implementation and dashboard assets.
+if ! command -v node >/dev/null 2>&1; then
+  echo "==> installing Node.js for Probeport"
+  brew install node
+fi
+if ! command -v pnpm >/dev/null 2>&1; then
+  echo "==> installing pnpm for Probeport"
+  brew install pnpm
+fi
+
+probeport_dir="$HOME/Projects/probeport"
+if [ -d "$probeport_dir/.git" ]; then
+  if [ "$upgrade" = 1 ]; then
+    if git -C "$probeport_dir" diff --quiet &&
+      git -C "$probeport_dir" diff --cached --quiet; then
+      echo "==> updating Probeport"
+      git -C "$probeport_dir" pull --ff-only ||
+        echo "warn: Probeport pull failed — resolve $probeport_dir manually"
+    else
+      echo "warn: Probeport has local changes — skipped pull"
+    fi
+  fi
+else
+  echo "==> cloning Probeport"
+  mkdir -p "$HOME/Projects"
+  git clone https://github.com/edihasaj/probeport.git "$probeport_dir"
+fi
+
+if [ -d "$probeport_dir" ]; then
+  echo "==> building Probeport"
+  (cd "$probeport_dir" && pnpm install --frozen-lockfile && pnpm build)
+fi
+
 # abx drives Playwright's Chromium — fetch it once if the cache is empty.
 if command -v abx >/dev/null 2>&1; then
   browsers="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/Library/Caches/ms-playwright}"
@@ -108,6 +143,7 @@ Fleet ready:
   guiport  — macOS desktop driver             (grant TCC: guiport doctor --fix)
   abx      — headless browser CLI             (abx --help)
   shotport — token-cheap screenshots          (shotport --help)
+  probeport — evidence-first exhaustive QA    (probeport doctor --deep)
 
 Re-run with --upgrade to bump everything to the latest.
 EOS

@@ -15,7 +15,7 @@ Usage: scripts/setup-agent-machine.sh [--upgrade] [--no-pull]
 
 Installs/updates agent CLIs and verifies local permissions:
   1. pull agent-scripts
-  2. setup fleet tools (vmlab, guiport, abx, shotport)
+  2. setup fleet tools (vmlab, guiport, abx, shotport, probeport)
   3. fetch abx browser runtime
   4. walk macOS Accessibility/Screen Recording prompts
   5. run cheap smoke checks
@@ -143,6 +143,15 @@ if have vmlab; then
   echo "vmlab ok"
 else
   warn "vmlab missing after setup"
+fi
+
+if have probeport; then
+  step "probeport smoke"
+  probeport version
+  probeport doctor >/dev/null
+  echo "probeport ok"
+else
+  warn "probeport missing after setup"
 fi
 
 cat <<'EOS'
