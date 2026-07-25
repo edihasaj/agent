@@ -127,6 +127,16 @@ if [ -d "$probeport_dir" ]; then
   (cd "$probeport_dir" && pnpm install --frozen-lockfile && pnpm build)
 fi
 
+agent_scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+probeport_wrapper="$agent_scripts_dir/bin/probeport"
+probeport_link="$HOME/.local/bin/probeport"
+mkdir -p "$HOME/.local/bin"
+if [ ! -e "$probeport_link" ] || [ -L "$probeport_link" ]; then
+  ln -sfn "$probeport_wrapper" "$probeport_link"
+elif [ "$probeport_link" != "$probeport_wrapper" ]; then
+  echo "warn: $probeport_link exists and is not a symlink — kept it unchanged"
+fi
+
 # abx drives Playwright's Chromium — fetch it once if the cache is empty.
 if command -v abx >/dev/null 2>&1; then
   browsers="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/Library/Caches/ms-playwright}"
