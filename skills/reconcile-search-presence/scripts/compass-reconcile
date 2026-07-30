@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mode="--dry-run"
+scope="production"
+
+usage() {
+  echo "Usage: compass-reconcile [--dry-run|--apply] [--local]"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run) mode="--dry-run" ;;
+    --apply) mode="" ;;
+    --local) scope="local" ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+compass_dir="${COMPASS_DIR:-${HOME}/Projects/compass}"
+
+if [[ "${scope}" == "local" ]]; then
+  cd "${compass_dir}"
+  uv run compass seo reconcile ${mode} --json
+  exit
+fi
+
+production_host="${COMPASS_PRODUCTION_HOST:-baseadmin@135.220.98.13}"
+production_key="${COMPASS_PRODUCTION_KEY:-${HOME}/.ssh/basevm_clean_20260724_ed25519}"
+
+ssh -o IdentitiesOnly=yes -i "${production_key}" "${production_host}" \
+  "cd /mnt/data/compass && \
+   REACHOUT_DB=/mnt/data/reachout/data/reachout.db \
+   COMPASS_DB=/mnt/data/compass/data/compass.db \
+   /home/baseadmin/.local/bin/uv run compass seo reconcile ${mode} --json"

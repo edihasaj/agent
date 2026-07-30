@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reconcile Search Presence"
+  short_description: "Keep every app registered and discoverable"
+  default_prompt: "Use $reconcile-search-presence to onboard or update all app domains across search providers."
