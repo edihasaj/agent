@@ -16,6 +16,23 @@ load_machine_env() {
   set +a
 }
 
+load_npx() {
+  if command -v npx >/dev/null 2>&1; then
+    return
+  fi
+
+  local nvm_sh="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+  if [[ -r "$nvm_sh" ]]; then
+    # shellcheck source=/dev/null
+    source "$nvm_sh"
+  fi
+
+  if ! command -v npx >/dev/null 2>&1; then
+    echo "agent-mcp: npx missing. Install Node.js or expose it in ~/.profile or ~/.zprofile." >&2
+    exit 69
+  fi
+}
+
 usage() {
   cat >&2 <<'USAGE'
 Usage: agent-mcp <profile>
@@ -118,6 +135,8 @@ case "$PROFILE" in
     # Self-hosted GlitchTip remote MCP with OAuth 2.0 dynamic client
     # registration. mcp-remote drives browser login and caches tokens in
     # ~/.mcp-auth; no credential is stored in this repository.
+    load_machine_env
+    load_npx
     exec npx -y mcp-remote@latest \
       https://errors.applifyer.com/mcp \
       --transport http-first

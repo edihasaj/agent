@@ -45,6 +45,8 @@ The launcher sources those files at MCP startup. This fixes GUI or daemon-launch
 
 Do not commit API keys, bearer tokens, 1Password item IDs, or generated MCP auth caches. If a secret is only in 1Password, pull it into the machine-local profile manually or with a targeted tmux-backed `op` flow, then restart the MCP client.
 
+The GlitchTip profile also loads NVM's `nvm.sh` when `npx` is absent from a GUI or non-login shell `PATH`.
+
 ## Global Config Snippets
 
 Claude-style JSON:
