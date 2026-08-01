@@ -18,6 +18,7 @@ Use `~/Projects/agent-scripts/bin/agent-mcp <profile>` from global MCP config. K
 - `slack` -> NOT via mcp-remote. Workspace Slack MCP apps commonly enforce a fixed redirect-URI allowlist and reject dynamic client registration, so mcp-remote's random-port `/oauth/callback` never matches (login loops). Use a client with native remote-MCP OAuth (Claude Code / VS Code / GitHub Copilot CLI): pin a fixed callback port + `/callback` path and have the Slack-app admin allowlist it. Workspace-specific client ids live in the private overlay.
 - `atlassian` -> `mcp-remote@latest` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
 - `stripe` -> `mcp-remote@latest` to `https://mcp.stripe.com` (Stripe hosted MCP; OAuth 2.1 browser login, tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
+- `glitchtip` -> `mcp-remote@latest` to `https://errors.applifyer.com/mcp` (self-hosted GlitchTip; OAuth 2.0 browser login, tokens cached machine-locally in `~/.mcp-auth`)
 - `guiport` -> `guiport serve --mcp`
 
 Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/config/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.

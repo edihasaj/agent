@@ -28,6 +28,7 @@ Profiles:
   slack            Slack remote MCP via mcp-remote (OAuth browser login)
   atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
   stripe           Stripe hosted remote MCP via mcp-remote (OAuth browser login)
+  glitchtip        Applifyer GlitchTip MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
@@ -111,6 +112,15 @@ case "$PROFILE" in
       https://mcp.stripe.com \
       --transport http-first \
       --static-oauth-client-metadata '{"scope":"mcp"}'
+    ;;
+
+  glitchtip)
+    # Self-hosted GlitchTip remote MCP with OAuth 2.0 dynamic client
+    # registration. mcp-remote drives browser login and caches tokens in
+    # ~/.mcp-auth; no credential is stored in this repository.
+    exec npx -y mcp-remote@latest \
+      https://errors.applifyer.com/mcp \
+      --transport http-first
     ;;
 
   guiport)
