@@ -135,7 +135,6 @@ case "$PROFILE" in
     # Self-hosted GlitchTip remote MCP with OAuth 2.0 dynamic client
     # registration. mcp-remote drives browser login and caches tokens in
     # ~/.mcp-auth; no credential is stored in this repository.
-    load_machine_env
     load_npx
     exec npx -y mcp-remote@latest \
       https://errors.applifyer.com/mcp \
