@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# macOS ships no `timeout`, and without Homebrew coreutils there is no
+# `gtimeout` either. Agents and scripts written against Linux reach for it
+# constantly and get a bare "command not found" (exit 127), which reads like a
+# broken PATH rather than a missing tool. This shim supplies the common GNU
+# surface so those invocations behave the way they were written.
+#
+# Supported: timeout [-k DURATION] [-s SIGNAL] [--preserve-status] [--foreground]
+#                    DURATION COMMAND [ARG]...
+# DURATION accepts a plain number or a s/m/h/d suffix, as GNU does.
+# Exits 124 when the command timed out, matching GNU.
+set -uo pipefail
+
+if command -v gtimeout >/dev/null 2>&1; then
+  exec gtimeout "$@"
+fi
+
+kill_after=""
+signal="TERM"
+preserve_status=0
+
+usage() {
+  echo "usage: timeout [-k DURATION] [-s SIGNAL] [--preserve-status] DURATION COMMAND [ARG]..." >&2
+  exit 125
+}
+
+to_seconds() {
+  local value="$1" number unit
+  number="${value%[smhd]}"
+  unit="${value#"$number"}"
+  [[ "$number" =~ ^[0-9]+([.][0-9]+)?$ ]] || return 1
+  case "$unit" in
+    ""|s) echo "$number" ;;
+    m) awk -v n="$number" 'BEGIN{printf "%s", n*60}' ;;
+    h) awk -v n="$number" 'BEGIN{printf "%s", n*3600}' ;;
+    d) awk -v n="$number" 'BEGIN{printf "%s", n*86400}' ;;
+    *) return 1 ;;
+  esac
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -k) kill_after="$2"; shift 2 ;;
+    -k*) kill_after="${1#-k}"; shift ;;
+    --kill-after=*) kill_after="${1#*=}"; shift ;;
+    -s) signal="$2"; shift 2 ;;
+    -s*) signal="${1#-s}"; shift ;;
+    --signal=*) signal="${1#*=}"; shift ;;
+    --preserve-status) preserve_status=1; shift ;;
+    --foreground) shift ;;
+    -h|--help) usage ;;
+    --) shift; break ;;
+    -*) usage ;;
+    *) break ;;
+  esac
+done
+
+[[ $# -ge 2 ]] || usage
+duration="$(to_seconds "$1")" || usage
+shift
+
+"$@" &
+command_pid=$!
+
+(
+  # Sleep in the background so a timeout can fire while the command still runs.
+  sleep "$duration"
+  kill -s "$signal" "$command_pid" 2>/dev/null || exit 0
+  if [[ -n "$kill_after" ]]; then
+    grace="$(to_seconds "$kill_after")" || grace=5
+    sleep "$grace"
+    kill -s KILL "$command_pid" 2>/dev/null || true
+  fi
+) &
+watchdog_pid=$!
+
+# Bash announces a signalled background job ("Terminated: 15") on stderr while
+# reaping it. GNU timeout stays quiet, and callers parse stderr, so drop it.
+{ wait "$command_pid"; status=$?; } 2>/dev/null
+
+# The watchdog is still sleeping if the command finished first; retiring it here
+# is what keeps a short command from blocking on a long timeout value.
+if kill -0 "$watchdog_pid" 2>/dev/null; then
+  kill "$watchdog_pid" 2>/dev/null || true
+  wait "$watchdog_pid" 2>/dev/null || true
+  exit "$status"
+fi
+
+wait "$watchdog_pid" 2>/dev/null || true
+# The command was signalled: bash reports 128+signal. Report GNU's 124 unless
+# the caller asked for the command's own status.
+if [[ "$preserve_status" -eq 1 ]]; then
+  exit "$status"
+fi
+exit 124
