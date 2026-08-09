@@ -117,6 +117,41 @@ for ((index = 0; index < ${#skill_names[@]}; index++)); do
   fi
 done
 
+# Paseo installs managed skill copies into both the cross-agent registry and
+# Codex's legacy registry. Keep the neutral copy and remove the Codex duplicate
+# only when both managed trees are byte-for-byte identical.
+for legacy_dir in "$legacy_codex_root/paseo" "$legacy_codex_root"/paseo-*; do
+  [[ -e "$legacy_dir" || -L "$legacy_dir" ]] || continue
+  skill_name="${legacy_dir##*/}"
+  neutral_dir="$neutral_root/$skill_name"
+
+  if [[ -L "$legacy_dir" && -r "$neutral_dir/SKILL.md" ]]; then
+    if [[ "$mode" == "check" ]]; then
+      echo "legacy Codex Paseo link: $legacy_dir" >&2
+      failures=$((failures + 1))
+    else
+      unlink "$legacy_dir"
+    fi
+    continue
+  fi
+
+  [[ -d "$legacy_dir" && -d "$neutral_dir" ]] || continue
+  [[ -f "$legacy_dir/.paseo-managed-files.json" &&
+     -f "$neutral_dir/.paseo-managed-files.json" ]] || continue
+
+  if diff -qr "$legacy_dir" "$neutral_dir" >/dev/null; then
+    if [[ "$mode" == "check" ]]; then
+      echo "duplicate Codex Paseo skill: $legacy_dir" >&2
+      failures=$((failures + 1))
+    else
+      rm -rf -- "$legacy_dir"
+    fi
+  else
+    echo "error: divergent Codex Paseo skill kept: $legacy_dir" >&2
+    failures=$((failures + 1))
+  fi
+done
+
 if [[ "$failures" -ne 0 ]]; then
   echo "skill sync failed: $failures issue(s)" >&2
   exit 1
