@@ -96,10 +96,15 @@ else
   "$repo_dir/scripts/setup-fleet.sh"
 fi
 
+step "sync agent instructions and skills"
+"$repo_dir/scripts/setup-macos.sh"
+
 step "PATH hint"
+# Keep the shell variables literal in the profile snippet shown to the user.
+# shellcheck disable=SC2016
 profile_line='export PATH="$HOME/Projects/agent/scripts:$HOME/Projects/agent/bin:$PATH"'
 if [ -f "$HOME/.profile" ] && grep -Fq 'Projects/agent/scripts' "$HOME/.profile"; then
-  echo "~/.profile already exposes agent helpers"
+  echo "$HOME/.profile already exposes agent helpers"
 else
   echo "Add this to ~/.profile for committer/docs-list/agent-mcp in future shells:"
   echo "  $profile_line"

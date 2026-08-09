@@ -3,13 +3,19 @@ set -euo pipefail
 
 mode="sync"
 include_private=1
+selected_registries=()
 
 usage() {
   cat <<'EOF'
-usage: sync-agent-skills.sh [--check] [--public-only]
+usage: sync-agent-skills.sh [--check] [--public-only] [--registry NAME]...
 
 Link canonical public and private skills into the shared user registry and
 Claude's compatibility registry. Existing non-symlink directories are kept.
+
+Options:
+  --check            report drift without changing files
+  --public-only      ignore the sibling private manager repo
+  --registry NAME    configure shared or claude; repeat to select both
 
 Environment overrides:
   PRIVATE_SKILLS_ROOT  private source (default: ../manager/skills)
@@ -22,6 +28,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) mode="check" ;;
     --public-only) include_private=0 ;;
+    --registry)
+      [[ $# -ge 2 ]] || { echo "error: --registry requires a value" >&2; exit 2; }
+      selected_registries+=("$2")
+      shift
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "error: unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -34,6 +45,31 @@ private_root="${PRIVATE_SKILLS_ROOT:-$repo_root/../manager/skills}"
 neutral_root="${AGENT_SKILLS_HOME:-$HOME/.agents/skills}"
 claude_root="${CLAUDE_SKILLS_HOME:-$HOME/.claude/skills}"
 legacy_codex_root="$HOME/.codex/skills"
+
+if [[ "${#selected_registries[@]}" -eq 0 ]]; then
+  selected_registries=(shared claude)
+fi
+
+registry_roots=()
+registry_names=()
+use_shared=0
+for registry_name in "${selected_registries[@]}"; do
+  case "$registry_name" in
+    shared) registry_root="$neutral_root"; use_shared=1 ;;
+    claude) registry_root="$claude_root" ;;
+    *) echo "error: unknown registry: $registry_name" >&2; exit 2 ;;
+  esac
+
+  already_selected=0
+  if [[ "${#registry_names[@]}" -gt 0 ]]; then
+    for existing_registry in "${registry_names[@]}"; do
+      [[ "$existing_registry" == "$registry_name" ]] && already_selected=1
+    done
+  fi
+  [[ "$already_selected" -eq 1 ]] && continue
+  registry_names+=("$registry_name")
+  registry_roots+=("$registry_root")
+done
 
 source_roots=("$public_root")
 if [[ "$include_private" -eq 1 && -d "$private_root" ]]; then
@@ -78,7 +114,7 @@ for source_root in "${source_roots[@]}"; do
 done
 
 if [[ "$mode" == "sync" ]]; then
-  mkdir -p "$neutral_root" "$claude_root"
+  mkdir -p "${registry_roots[@]}"
 fi
 
 failures=0
@@ -86,7 +122,7 @@ for ((index = 0; index < ${#skill_names[@]}; index++)); do
   skill_name="${skill_names[$index]}"
   skill_dir="${skill_dirs[$index]}"
 
-  for registry_root in "$neutral_root" "$claude_root"; do
+  for registry_root in "${registry_roots[@]}"; do
     destination="$registry_root/$skill_name"
     if [[ "$mode" == "check" ]]; then
       if [[ ! -L "$destination" || "$(readlink "$destination")" != "$skill_dir" || ! -r "$destination/SKILL.md" ]]; then
@@ -102,7 +138,7 @@ for ((index = 0; index < ${#skill_names[@]}; index++)); do
   done
 
   legacy_link="$legacy_codex_root/$skill_name"
-  if [[ -L "$legacy_link" ]]; then
+  if [[ "$use_shared" -eq 1 && -L "$legacy_link" ]]; then
     legacy_target="$(readlink "$legacy_link")"
     if [[ "$legacy_target" == "$public_root/"* ||
           "$legacy_target" == "$private_root/"* ||
@@ -121,6 +157,7 @@ done
 # Codex's legacy registry. Keep the neutral copy and remove the Codex duplicate
 # only when both managed trees are byte-for-byte identical.
 for legacy_dir in "$legacy_codex_root/paseo" "$legacy_codex_root"/paseo-*; do
+  [[ "$use_shared" -eq 1 ]] || break
   [[ -e "$legacy_dir" || -L "$legacy_dir" ]] || continue
   skill_name="${legacy_dir##*/}"
   neutral_dir="$neutral_root/$skill_name"
@@ -157,4 +194,5 @@ if [[ "$failures" -ne 0 ]]; then
   exit 1
 fi
 
-echo "skills $mode complete: public=$public_count private=$private_count"
+registry_list="$(IFS=,; echo "${registry_names[*]}")"
+echo "skills $mode complete: public=$public_count private=$private_count registries=$registry_list"

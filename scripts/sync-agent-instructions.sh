@@ -2,14 +2,20 @@
 set -euo pipefail
 
 mode="sync"
+selected_clis=()
 
 usage() {
   cat <<'EOF'
-usage: sync-agent-instructions.sh [--check]
+usage: sync-agent-instructions.sh [--check] [--cli NAME]...
 
 Link the canonical AGENTS.MD into each supported CLI's user-level instruction
 path. Existing regular files are preserved and receive the canonical pointer
 as their first line.
+
+Options:
+  --check       report drift without changing files
+  --cli NAME    configure home, codex, claude, opencode, gemini, or copilot;
+                repeat to configure multiple CLIs
 
 Environment overrides:
   AGENT_INSTRUCTIONS_SOURCE   canonical file (default: ../AGENTS.MD)
@@ -20,6 +26,11 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) mode="check" ;;
+    --cli)
+      [[ $# -ge 2 ]] || { echo "error: --cli requires a value" >&2; exit 2; }
+      selected_clis+=("$2")
+      shift
+      ;;
     -h|--help) usage; exit 0 ;;
     *) echo "error: unknown argument: $1" >&2; usage >&2; exit 2 ;;
   esac
@@ -37,14 +48,33 @@ if [[ ! -f "$canonical_source" ]]; then
 fi
 canonical_source="$(cd "$(dirname "$canonical_source")" && pwd)/$(basename "$canonical_source")"
 
-targets=(
-  "$HOME/AGENTS.md"
-  "$HOME/.codex/AGENTS.md"
-  "$HOME/.claude/CLAUDE.md"
-  "$HOME/.config/opencode/AGENTS.md"
-  "$HOME/.gemini/GEMINI.md"
-  "$HOME/.github/copilot-instructions.md"
-)
+if [[ "${#selected_clis[@]}" -eq 0 ]]; then
+  selected_clis=(home codex claude opencode gemini copilot)
+fi
+
+targets=()
+cli_names=()
+for cli_name in "${selected_clis[@]}"; do
+  case "$cli_name" in
+    home) destination="$HOME/AGENTS.md" ;;
+    codex) destination="$HOME/.codex/AGENTS.md" ;;
+    claude) destination="$HOME/.claude/CLAUDE.md" ;;
+    opencode) destination="$HOME/.config/opencode/AGENTS.md" ;;
+    gemini) destination="$HOME/.gemini/GEMINI.md" ;;
+    copilot) destination="$HOME/.github/copilot-instructions.md" ;;
+    *) echo "error: unknown CLI: $cli_name" >&2; exit 2 ;;
+  esac
+
+  already_selected=0
+  if [[ "${#cli_names[@]}" -gt 0 ]]; then
+    for existing_cli in "${cli_names[@]}"; do
+      [[ "$existing_cli" == "$cli_name" ]] && already_selected=1
+    done
+  fi
+  [[ "$already_selected" -eq 1 ]] && continue
+  cli_names+=("$cli_name")
+  targets+=("$destination")
+done
 
 failures=0
 linked=0
@@ -115,4 +145,5 @@ if [[ "$failures" -ne 0 ]]; then
   exit 1
 fi
 
-echo "instructions $mode complete: linked=$linked preserved=$preserved"
+cli_list="$(IFS=,; echo "${cli_names[*]}")"
+echo "instructions $mode complete: linked=$linked preserved=$preserved clis=$cli_list"
