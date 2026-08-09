@@ -57,12 +57,14 @@ for source_root in "${source_roots[@]}"; do
       exit 1
     fi
 
-    for existing_name in "${skill_names[@]}"; do
-      if [[ "$existing_name" == "$skill_name" ]]; then
-        echo "error: duplicate skill name across sources: $skill_name" >&2
-        exit 1
-      fi
-    done
+    if [[ "${#skill_names[@]}" -gt 0 ]]; then
+      for existing_name in "${skill_names[@]}"; do
+        if [[ "$existing_name" == "$skill_name" ]]; then
+          echo "error: duplicate skill name across sources: $skill_name" >&2
+          exit 1
+        fi
+      done
+    fi
 
     skill_names+=("$skill_name")
     skill_dirs+=("$skill_dir")
