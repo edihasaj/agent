@@ -1,6 +1,6 @@
 ---
 name: favicon-generator
-description: Generate favicons, app icons, manifests, and SEO files (robots.txt, sitemap.xml, agents.txt, llms.txt) plus a paste-ready HTML <head> snippet from a single source image. Mirrors favicon-generator.org output. Use when the user asks for favicons, app icons, web manifest, or "set up SEO files" for a site/app. Supports web, ios, android, windows, macos (.icns), linux (hicolor + .desktop).
+description: Generate favicons, app icons, manifests, and SEO files (robots.txt, sitemap.xml, agents.txt, llms.txt) plus a paste-ready HTML head snippet from a single source image. Mirrors favicon-generator.org output. Use when the user asks for favicons, app icons, web manifest, or "set up SEO files" for a site/app. Supports web, ios, android, windows, macos (.icns), linux (hicolor + .desktop).
 ---
 
 # Favicon & SEO Generator
