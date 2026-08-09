@@ -37,6 +37,7 @@ legacy_codex_root="$HOME/.codex/skills"
 
 source_roots=("$public_root")
 if [[ "$include_private" -eq 1 && -d "$private_root" ]]; then
+  private_root="$(cd "$private_root" && pwd)"
   source_roots+=("$private_root")
 fi
 
