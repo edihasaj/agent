@@ -14,7 +14,7 @@ state. Use provider APIs for registration and evidence; never scrape results.
 2. Run the production inventory without mutations:
 
 ```bash
-~/Projects/agent-scripts/skills/reconcile-search-presence/scripts/compass-reconcile --dry-run
+~/Projects/agent/skills/reconcile-search-presence/scripts/compass-reconcile --dry-run
 ```
 
 3. Group failures by shared gate, not app. Fix one credential or ownership gate
@@ -42,7 +42,7 @@ sqlite3 -readonly ~/Projects/reachout/data/reachout.db \
 
 ```bash
 COMPASS_INDEXNOW_KEY="$COMPASS_INDEXNOW_KEY" \
-  ~/Projects/agent-scripts/skills/reconcile-search-presence/scripts/notify_indexnow.py \
+  ~/Projects/agent/skills/reconcile-search-presence/scripts/notify_indexnow.py \
   https://example.com/ https://example.com/changed-page
 ```
 
@@ -54,8 +54,8 @@ COMPASS_INDEXNOW_KEY="$COMPASS_INDEXNOW_KEY" \
 5. Preview, then apply:
 
 ```bash
-~/Projects/agent-scripts/skills/reconcile-search-presence/scripts/compass-reconcile --dry-run
-~/Projects/agent-scripts/skills/reconcile-search-presence/scripts/compass-reconcile --apply
+~/Projects/agent/skills/reconcile-search-presence/scripts/compass-reconcile --dry-run
+~/Projects/agent/skills/reconcile-search-presence/scripts/compass-reconcile --apply
 ```
 
 6. Run the full evidence loop:

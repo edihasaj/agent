@@ -14,7 +14,7 @@ usage() {
 Usage: scripts/setup-agent-machine.sh [--upgrade] [--no-pull]
 
 Installs/updates agent CLIs and verifies local permissions:
-  1. pull agent-scripts
+  1. pull agent
   2. setup fleet tools (vmlab, guiport, abx, shotport, probeport)
   3. fetch abx browser runtime
   4. walk macOS Accessibility/Screen Recording prompts
@@ -22,7 +22,7 @@ Installs/updates agent CLIs and verifies local permissions:
 
 Flags:
   --upgrade   upgrade already-installed Homebrew tools
-  --no-pull   skip git pull for agent-scripts
+  --no-pull   skip git pull for agent
   -h, --help  show this help
 EOS
 }
@@ -81,11 +81,11 @@ run_doctor_until_ok() {
 cd "$repo_dir"
 
 if [ "$pull" = 1 ]; then
-  step "pull agent-scripts"
+  step "pull agent"
   if git diff --quiet && git diff --cached --quiet; then
-    git pull --ff-only || warn "agent-scripts pull failed"
+    git pull --ff-only || warn "agent pull failed"
   else
-    warn "agent-scripts has local changes; skipped pull"
+    warn "agent has local changes; skipped pull"
   fi
 fi
 
@@ -97,9 +97,9 @@ else
 fi
 
 step "PATH hint"
-profile_line='export PATH="$HOME/Projects/agent-scripts/scripts:$HOME/Projects/agent-scripts/bin:$PATH"'
-if [ -f "$HOME/.profile" ] && grep -Fq 'Projects/agent-scripts/scripts' "$HOME/.profile"; then
-  echo "~/.profile already exposes agent-scripts helpers"
+profile_line='export PATH="$HOME/Projects/agent/scripts:$HOME/Projects/agent/bin:$PATH"'
+if [ -f "$HOME/.profile" ] && grep -Fq 'Projects/agent/scripts' "$HOME/.profile"; then
+  echo "~/.profile already exposes agent helpers"
 else
   echo "Add this to ~/.profile for committer/docs-list/agent-mcp in future shells:"
   echo "  $profile_line"

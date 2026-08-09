@@ -92,7 +92,7 @@ else
   fi
 fi
 
-# Probeport is private and source-built. The stable agent-scripts wrapper keeps
+# Probeport is private and source-built. The stable agent wrapper keeps
 # invocation identical across agent runtimes while this checkout owns the
 # versioned implementation and dashboard assets.
 if ! command -v node >/dev/null 2>&1; then

@@ -40,7 +40,7 @@ Read only the provider section needed for the current failure.
 - Ownership: serve the exact key at `https://domain/<key>.txt`.
 - Submit only public URLs belonging to that host.
 - Invoke
-  `~/Projects/agent-scripts/skills/reconcile-search-presence/scripts/notify_indexnow.py`
+  `~/Projects/agent/skills/reconcile-search-presence/scripts/notify_indexnow.py`
   with one or more absolute changed URLs in successful deploy hooks. Use
   `--dry-run` to validate arguments without network access. Compass also
   performs a weekly portfolio submission.

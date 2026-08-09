@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Thin launcher so the CLI runs with uv-managed inline deps from anywhere.
-# Symlink onto PATH:  ln -sf ~/Projects/agent-scripts/skills/apple-codesign/scripts/apple-codesign ~/Projects/agent-scripts/bin/apple-codesign
+# Symlink onto PATH:  ln -sf ~/Projects/agent/skills/apple-codesign/scripts/apple-codesign ~/Projects/agent/bin/apple-codesign
 set -euo pipefail
 # Resolve through symlinks (this script is symlinked onto PATH from bin/).
 SRC="$0"

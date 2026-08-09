@@ -23,7 +23,7 @@ If the user has no source image, generate one first using the `nano-banana-pro` 
 ## Run it
 
 ```bash
-python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
+python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./logo.png \
   --out ./public \
   --platforms web \
@@ -101,7 +101,7 @@ Re-running the CLI **always overwrites PNGs/.ico** (cheap to regenerate). Text f
 
 **Web project, full set:**
 ```bash
-python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
+python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./logo.png --out ./public --platforms web \
   --site-url https://chirpgo.app --name "Chirp Go" \
   --description "On-device AI voice-to-text for macOS" \
@@ -112,22 +112,22 @@ python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
 **Generate logo first via nano-banana-pro, then favicons:**
 ```bash
 # 1) generate source
-uv run ~/Projects/agent-scripts/skills/nano-banana-pro/scripts/generate_image.py \
+uv run ~/Projects/agent/skills/nano-banana-pro/scripts/generate_image.py \
   --prompt "minimalist app icon: <description>" \
   --filename "logo.png" --resolution 1K
 # 2) generate favicons
-python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
+python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./logo.png --platforms all --site-url https://example.com --name "App"
 ```
 
 **Native macOS app — .icns only:**
 ```bash
-python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
+python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./icon.png --out ./Resources --platforms macos --no-seo --no-html
 ```
 
 **Block AI crawlers:**
 ```bash
-python3 ~/Projects/agent-scripts/skills/favicon-generator/scripts/favicon.py \
+python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./logo.png --site-url https://example.com --block-ai
 ```

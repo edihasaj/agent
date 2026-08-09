@@ -7,7 +7,7 @@ read_when:
 
 # MCP Profiles
 
-Use `~/Projects/agent-scripts/bin/agent-mcp <profile>` from global MCP config. Keep AGENTS compact and keep secrets in machine-local shell config, not git.
+Use `~/Projects/agent/bin/agent-mcp <profile>` from global MCP config. Keep AGENTS compact and keep secrets in machine-local shell config, not git.
 
 ## Profiles
 
@@ -27,7 +27,7 @@ Private/org-specific profiles (and their setup notes) live in the private overla
 
 Miro's hosted MCP (`miro` profile) has **no delete and no move** for items/tables, so every reposition or content fix spawns a duplicate. The `miro` CLI helper fills those gaps via the Miro REST API v2.
 
-- Command: `~/Projects/agent-scripts/scripts/miro` (on PATH). Subcommands: `whoami`, `list <board> [--type T]`, `get <board> <id>`, `delete <board> <id...>`, `move <board> <id> --x N --y N`, `board-delete <board>`.
+- Command: `~/Projects/agent/scripts/miro` (on PATH). Subcommands: `whoami`, `list <board> [--type T]`, `get <board> <id>`, `delete <board> <id...>`, `move <board> <id> --x N --y N`, `board-delete <board>`.
 - Accepts full board URLs and `?moveToWidget=<id>` values directly (no manual id extraction).
 - Auth: `MIRO_TOKEN` env (OAuth token from a Miro app with `boards:read` + `boards:write`). Keep a canonical copy in your password manager alongside the client id/secret used to refresh it. Create/refresh tokens at <https://miro.com/app/settings/user-profile/apps/>.
 - **Tables**: MCP-created tables have REST type `data_table_format` but the **generic `/items/{id}` endpoint handles them** — `delete` and `move` both work (verified on a scratch board).
@@ -55,7 +55,7 @@ Claude-style JSON:
 {
   "mcpServers": {
     "zapfeed": {
-      "command": "/Users/edi/Projects/agent-scripts/bin/agent-mcp",
+      "command": "/Users/edi/Projects/agent/bin/agent-mcp",
       "args": ["zapfeed"]
     }
   }
@@ -66,14 +66,14 @@ Codex TOML:
 
 ```toml
 [mcp_servers.zapfeed]
-command = "/Users/edi/Projects/agent-scripts/bin/agent-mcp"
+command = "/Users/edi/Projects/agent/bin/agent-mcp"
 args = ["zapfeed"]
 ```
 
 ## Checks
 
 ```bash
-~/Projects/agent-scripts/bin/agent-mcp --help
+~/Projects/agent/bin/agent-mcp --help
 ssh -o BatchMode=yes -o RequestTTY=no -o RemoteCommand=none studio 'hostname'
 obsidian vaults
 ```
