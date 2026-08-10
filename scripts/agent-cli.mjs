@@ -34,12 +34,12 @@ export function parseAgentArgs(argv) {
   return options;
 }
 
-function executableExists(command, platform = process.platform) {
+function executableExists(command, platform = process.platform, pathValue = process.env.PATH || "") {
   if (command.includes("/") || command.includes("\\")) return existsSync(command);
   const extensions = platform === "win32"
     ? (process.env.PATHEXT || ".COM;.EXE;.BAT;.CMD").split(";")
     : [""];
-  return (process.env.PATH || "").split(delimiter).some((directory) =>
+  return pathValue.split(delimiter).some((directory) =>
     extensions.some((extension) => existsSync(join(directory, command + extension.toLowerCase())) ||
       existsSync(join(directory, command + extension.toUpperCase()))),
   );
@@ -68,13 +68,19 @@ function setupArguments(state) {
   return args;
 }
 
-function selectedClis(state, platform) {
-  if (state.cliMode === "all") return supportedClis;
-  if (state.cliMode === "explicit") return state.clis || [];
-  return supportedClis.filter((cli) => executableExists(cli, platform));
+export function userCliPath(userHome, currentPath = "") {
+  return [join(userHome, ".local", "bin"), join(userHome, ".npm-global", "bin"), currentPath]
+    .filter(Boolean)
+    .join(delimiter);
 }
 
-function runSetupCheck(state, platform) {
+function selectedClis(state, platform, pathValue) {
+  if (state.cliMode === "all") return supportedClis;
+  if (state.cliMode === "explicit") return state.clis || [];
+  return supportedClis.filter((cli) => executableExists(cli, platform, pathValue));
+}
+
+function runSetupCheck(state, platform, environment) {
   const args = setupArguments(state);
   if (platform === "win32") {
     const cliValues = [];
@@ -87,12 +93,12 @@ function runSetupCheck(state, platform) {
       else if (argument === "--cli") cliValues.push(args[++index]);
     }
     if (cliValues.length > 0) powershellArgs.push("-Cli", cliValues.join(","));
-    return spawnSync("powershell.exe", powershellArgs, { encoding: "utf8", env: process.env });
+    return spawnSync("powershell.exe", powershellArgs, { encoding: "utf8", env: environment });
   }
   const setup = platform === "darwin" ? "setup-macos.sh" : "setup-linux.sh";
   return spawnSync("bash", [resolve(repoRoot, "scripts", setup), ...args], {
     encoding: "utf8",
-    env: process.env,
+    env: environment,
   });
 }
 
@@ -122,6 +128,10 @@ export function repairCommand(profile, platform) {
 
 export function runDoctor(environment = process.env) {
   const userHome = resolve(environment.AGENT_SETUP_HOME || homedir());
+  const doctorEnvironment = {
+    ...environment,
+    PATH: userCliPath(userHome, environment.PATH || ""),
+  };
   const statePath = resolve(environment.AGENT_SETUP_STATE || join(userHome, ".config", "agent", "setup.json"));
   const managerRoot = resolve(environment.MANAGER_REPO_ROOT || join(repoRoot, "..", "manager"));
   const checks = [];
@@ -139,7 +149,7 @@ export function runDoctor(environment = process.env) {
     };
   }
   const platform = environment.AGENT_SETUP_PLATFORM || state.platform || process.platform;
-  const setup = runSetupCheck(state, platform);
+  const setup = runSetupCheck(state, platform, doctorEnvironment);
   const setupDetail = [setup.stderr, setup.stdout].filter(Boolean).join("\n").trim();
   checks.push({
     name: "shared-setup",
@@ -158,11 +168,11 @@ export function runDoctor(environment = process.env) {
   const privatePath = resolve(managerRoot, "config", "mcps.json");
   const privateServers = !state.publicOnly && existsSync(privatePath) ? loadJson(privatePath).servers || [] : [];
   const servers = mergeServers(publicServers, privateServers);
-  const clis = selectedClis(state, platform);
+  const clis = selectedClis(state, platform, doctorEnvironment.PATH);
   for (const server of servers) {
     if (server.enabled === false || (state.headless && server.name === "chrome-devtools")) continue;
     if (!server.clis?.some((cli) => clis.includes(cli))) continue;
-    const missing = (server.requires || []).filter((command) => !executableExists(command, platform));
+    const missing = (server.requires || []).filter((command) => !executableExists(command, platform, doctorEnvironment.PATH));
     checks.push({
       name: `requirements:${server.name}`,
       status: missing.length === 0 ? "pass" : "fail",

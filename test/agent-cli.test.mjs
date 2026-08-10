@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { delimiter } from "node:path";
 import test from "node:test";
-import { mergeServers, parseAgentArgs, repairCommand } from "../scripts/agent-cli.mjs";
+import { mergeServers, parseAgentArgs, repairCommand, userCliPath } from "../scripts/agent-cli.mjs";
 
 test("agent doctor supports human, JSON, and quiet output modes", () => {
   assert.deepEqual(parseAgentArgs(["doctor"]), {
@@ -24,6 +25,11 @@ test("doctor repair commands preserve the stored machine policy", () => {
   };
   assert.match(repairCommand(profile, "linux"), /setup-linux\.sh --public-only --headless --cli codex --cli claude$/);
   assert.match(repairCommand(profile, "win32"), /setup-windows\.ps1 -PublicOnly -Headless -Cli codex,claude$/);
+});
+
+test("doctor adds user CLI locations for non-login shells", () => {
+  const value = userCliPath("/home/edi", "/usr/bin");
+  assert.equal(value, ["/home/edi/.local/bin", "/home/edi/.npm-global/bin", "/usr/bin"].join(delimiter));
 });
 
 test("private MCP entries add and shallowly override public entries by name", () => {
