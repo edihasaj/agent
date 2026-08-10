@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "servers": [
+    {
+      "name": "chrome-devtools",
+      "enabled": true,
+      "clis": ["codex", "claude", "opencode", "gemini", "copilot"],
+      "requires": ["npx"],
+      "command": {
+        "posix": ["{repo}/bin/agent-mcp", "chrome-devtools"],
+        "windows": ["npx.cmd", "-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+      }
+    }
+  ]
+}

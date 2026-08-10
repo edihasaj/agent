@@ -12,7 +12,7 @@ usage() {
   cat <<'EOF'
 usage: setup-agent.sh [--check] [--public-only] [--all-clis] [--cli NAME]...
 
-Configure shared agent instructions and skills for the CLIs found on PATH.
+Configure shared instructions, skills, and MCPs for the CLIs found on PATH.
 By default, only detected CLIs are configured. Re-running is safe.
 
 Options:
@@ -163,6 +163,20 @@ fi
 
 "$repo_root/scripts/sync-agent-instructions.sh" "${instruction_args[@]}"
 
+mcp_args=()
+[[ "$mode" == "check" ]] && mcp_args+=(--check)
+[[ "$include_private" -eq 0 ]] && mcp_args+=(--public-only)
+for cli_name in "${selected_clis[@]}"; do
+  mcp_args+=(--cli "$cli_name")
+done
+if [[ "${#selected_clis[@]}" -gt 0 ]]; then
+  if command -v node >/dev/null 2>&1; then
+    node "$repo_root/scripts/sync-agent-mcps.mjs" "${mcp_args[@]}"
+  else
+    echo "MCP sync skipped: node missing"
+  fi
+fi
+
 if [[ "$mode" == "sync" ]]; then
   if [[ "${#registry_args[@]}" -gt 0 ]]; then
     verify_skill_args=("${registry_args[@]}" --check)
@@ -174,6 +188,14 @@ if [[ "$mode" == "sync" ]]; then
     verify_instruction_args+=(--cli "$cli_name")
   done
   "$repo_root/scripts/sync-agent-instructions.sh" "${verify_instruction_args[@]}"
+  if [[ "${#selected_clis[@]}" -gt 0 && -x "$(command -v node 2>/dev/null || true)" ]]; then
+    verify_mcp_args=(--check)
+    [[ "$include_private" -eq 0 ]] && verify_mcp_args+=(--public-only)
+    for cli_name in "${selected_clis[@]}"; do
+      verify_mcp_args+=(--cli "$cli_name")
+    done
+    node "$repo_root/scripts/sync-agent-mcps.mjs" "${verify_mcp_args[@]}"
+  fi
 fi
 
 echo "Agent setup complete."

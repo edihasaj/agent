@@ -5,7 +5,8 @@ param(
     [switch]$PublicOnly,
     [switch]$AllClis,
     [string[]]$Cli,
-    [string]$PrivateSkillsRoot
+    [string]$PrivateSkillsRoot,
+    [string]$PrivateMcpsConfig
 )
 
 $ErrorActionPreference = "Stop"
@@ -24,6 +25,10 @@ if (-not $PrivateSkillsRoot) {
 $SharedSkillsRoot = Join-Path $UserHome ".agents\skills"
 $ClaudeSkillsRoot = Join-Path $UserHome ".claude\skills"
 $LegacyCodexRoot = Join-Path $UserHome ".codex\skills"
+$McpSyncScript = Join-Path $RepoRoot "scripts\sync-agent-mcps.mjs"
+if (-not $PrivateMcpsConfig) {
+    $PrivateMcpsConfig = [IO.Path]::GetFullPath((Join-Path $RepoRoot "../manager/config/mcps.json"))
+}
 $script:Failures = 0
 
 function Write-Failure([string]$Message) {
@@ -263,6 +268,36 @@ function Sync-Instructions([bool]$CheckOnly, [string[]]$Clis) {
     Write-Output "instructions $($(if ($CheckOnly) { 'check' } else { 'sync' })) complete: clis=$($ConfiguredClis -join ',')"
 }
 
+function Sync-Mcps([bool]$CheckOnly, [string[]]$Clis) {
+    if ($Clis.Count -eq 0) {
+        return
+    }
+    $Node = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $Node) {
+        Write-Output "MCP sync skipped: node missing"
+        return
+    }
+    $Arguments = @($McpSyncScript)
+    if ($CheckOnly) { $Arguments += "--check" }
+    if ($PublicOnly) { $Arguments += "--public-only" }
+    foreach ($CliName in $Clis) {
+        $Arguments += @("--cli", $CliName)
+    }
+    $PreviousHome = $env:AGENT_SETUP_HOME
+    $PreviousPrivateConfig = $env:PRIVATE_MCPS_CONFIG
+    try {
+        $env:AGENT_SETUP_HOME = $UserHome
+        $env:PRIVATE_MCPS_CONFIG = $PrivateMcpsConfig
+        & $Node.Source @Arguments
+        if ($LASTEXITCODE -ne 0) {
+            $script:Failures++
+        }
+    } finally {
+        $env:AGENT_SETUP_HOME = $PreviousHome
+        $env:PRIVATE_MCPS_CONFIG = $PreviousPrivateConfig
+    }
+}
+
 $RequestedClis = @()
 foreach ($CliValue in @($Cli)) {
     foreach ($CliName in @($CliValue -split ',')) {
@@ -309,9 +344,11 @@ if (-not $PublicOnly -and (Test-Path -LiteralPath $PrivateSkillsRoot -PathType C
 
 Sync-Skills ([bool]$Check) $Registries
 Sync-Instructions ([bool]$Check) $SelectedClis
+Sync-Mcps ([bool]$Check) $SelectedClis
 if (-not $Check -and $script:Failures -eq 0) {
     Sync-Skills $true $Registries
     Sync-Instructions $true $SelectedClis
+    Sync-Mcps $true $SelectedClis
 }
 
 if ($script:Failures -gt 0) {
