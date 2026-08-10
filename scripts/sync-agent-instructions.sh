@@ -2,18 +2,21 @@
 set -euo pipefail
 
 mode="sync"
+all_clis=0
 selected_clis=()
+supported_clis=(codex claude opencode gemini copilot)
 
 usage() {
   cat <<'EOF'
-usage: sync-agent-instructions.sh [--check] [--cli NAME]...
+usage: sync-agent-instructions.sh [--check] [--all-clis] [--cli NAME]...
 
-Link the canonical AGENTS.MD into each supported CLI's user-level instruction
-path. Existing regular files are preserved and receive the canonical pointer
-as their first line.
+Link the canonical AGENTS.MD into detected CLIs' user-level instruction paths.
+Existing regular files are preserved and receive the canonical pointer as their
+first line.
 
 Options:
   --check       report drift without changing files
+  --all-clis    configure every supported CLI, installed or not
   --cli NAME    configure home, codex, claude, opencode, gemini, or copilot;
                 repeat to configure multiple CLIs
 
@@ -26,6 +29,7 @@ EOF
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) mode="check" ;;
+    --all-clis) all_clis=1 ;;
     --cli)
       [[ $# -ge 2 ]] || { echo "error: --cli requires a value" >&2; exit 2; }
       selected_clis+=("$2")
@@ -36,6 +40,11 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+if [[ "$all_clis" -eq 1 && "${#selected_clis[@]}" -gt 0 ]]; then
+  echo "error: --all-clis and --cli cannot be used together" >&2
+  exit 2
+fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 canonical_source="${AGENT_INSTRUCTIONS_SOURCE:-$repo_root/AGENTS.MD}"
@@ -49,7 +58,12 @@ fi
 canonical_source="$(cd "$(dirname "$canonical_source")" && pwd)/$(basename "$canonical_source")"
 
 if [[ "${#selected_clis[@]}" -eq 0 ]]; then
-  selected_clis=(home codex claude opencode gemini copilot)
+  selected_clis=(home)
+  for cli_name in "${supported_clis[@]}"; do
+    if [[ "$all_clis" -eq 1 ]] || command -v "$cli_name" >/dev/null 2>&1; then
+      selected_clis+=("$cli_name")
+    fi
+  done
 fi
 
 targets=()
