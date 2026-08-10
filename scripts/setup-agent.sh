@@ -181,6 +181,23 @@ if [[ "${#selected_clis[@]}" -gt 0 ]]; then
   fi
 fi
 
+maintenance_args=()
+[[ "$mode" == "check" ]] && maintenance_args+=(--check)
+[[ "$include_private" -eq 0 ]] && maintenance_args+=(--public-only)
+[[ "$headless" -eq 1 ]] && maintenance_args+=(--headless)
+if [[ "$all_clis" -eq 1 ]]; then
+  maintenance_args+=(--all-clis)
+elif [[ "${#requested_clis[@]}" -gt 0 ]]; then
+  for cli_name in "${requested_clis[@]}"; do
+    maintenance_args+=(--cli "$cli_name")
+  done
+fi
+if command -v node >/dev/null 2>&1; then
+  node "$repo_root/scripts/sync-agent-maintenance.mjs" "${maintenance_args[@]}"
+else
+  echo "Maintenance state/hooks skipped: node missing"
+fi
+
 if [[ "$mode" == "sync" ]]; then
   if [[ "${#registry_args[@]}" -gt 0 ]]; then
     verify_skill_args=("${registry_args[@]}" --check)

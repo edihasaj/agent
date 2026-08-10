@@ -8,7 +8,7 @@
       "requires": ["npx"],
       "command": {
         "posix": ["{repo}/bin/agent-mcp", "chrome-devtools"],
-        "windows": ["npx.cmd", "-y", "chrome-devtools-mcp@latest", "--autoConnect"]
+        "windows": ["npx.cmd", "-y", "chrome-devtools-mcp@1.7.0", "--autoConnect"]
       }
     }
   ]

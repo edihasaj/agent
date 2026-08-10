@@ -11,13 +11,13 @@ Use `~/Projects/agent/bin/agent-mcp <profile>` from global MCP config. Keep AGEN
 
 ## Profiles
 
-- `chrome-devtools` -> `npx -y chrome-devtools-mcp@latest --autoConnect`
+- `chrome-devtools` -> `npx -y chrome-devtools-mcp@1.7.0 --autoConnect`
 - `recall` -> local Recall app MCP runtime
 - `zapfeed` -> `mcp-remote@0.1.38` to `https://zapfeed.io/api/mcp`
-- `miro` -> `mcp-remote@latest` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
+- `miro` -> `mcp-remote@0.1.38` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
 - `slack` -> NOT via mcp-remote. Workspace Slack MCP apps commonly enforce a fixed redirect-URI allowlist and reject dynamic client registration, so mcp-remote's random-port `/oauth/callback` never matches (login loops). Use a client with native remote-MCP OAuth (Claude Code / VS Code / GitHub Copilot CLI): pin a fixed callback port + `/callback` path and have the Slack-app admin allowlist it. Workspace-specific client ids live in the private overlay.
-- `atlassian` -> `mcp-remote@latest` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
-- `stripe` -> `mcp-remote@latest` to `https://mcp.stripe.com` (Stripe hosted MCP; OAuth 2.1 browser login, tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
+- `atlassian` -> `mcp-remote@0.1.38` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
+- `stripe` -> `mcp-remote@0.1.38` to `https://mcp.stripe.com` (Stripe hosted remote MCP with OAuth 2.1 browser login and tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
 - `guiport` -> `guiport serve --mcp`
 
 Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/config/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.
@@ -55,6 +55,10 @@ skill setup. `replaces` lists old registration names for automatic migrations.
 `setup-linux.sh --headless` uses this for `chrome-devtools` on servers without a
 local browser/desktop.
 Never put credentials in either manifest.
+
+Runtime npm packages use reviewed exact versions rather than floating tags.
+Check upstream releases deliberately, update the launcher and platform command
+together, then run the setup regression suite before rollout.
 
 ### Miro REST helper (`scripts/miro`)
 
@@ -109,6 +113,13 @@ args = ["zapfeed"]
 ```bash
 ~/Projects/agent/bin/agent-mcp --help
 ~/Projects/agent/bin/sync-agent-mcps --check
+~/Projects/agent/bin/agent doctor
+~/Projects/agent/bin/agent doctor --json
 ssh -o BatchMode=yes -o RequestTTY=no -o RemoteCommand=none studio 'hostname'
 obsidian vaults
 ```
+
+The platform setup records its public/private, headless, and CLI-selection
+policy in `~/.config/agent/setup.json`. Managed Git hooks run the quiet doctor
+after pulls or rebases of either `agent` or `manager`; they report drift without
+changing configuration or failing the Git operation.

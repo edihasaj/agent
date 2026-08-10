@@ -65,7 +65,7 @@ fi
 case "$PROFILE" in
   chrome-devtools)
     load_npx
-    exec npx -y chrome-devtools-mcp@latest --autoConnect
+    exec npx -y chrome-devtools-mcp@1.7.0 --autoConnect
     ;;
 
   recall)
@@ -94,7 +94,7 @@ case "$PROFILE" in
     # Remote HTTP MCP with OAuth 2.1 (dynamic client registration).
     # mcp-remote drives the browser login and caches tokens in ~/.mcp-auth.
     load_npx
-    exec npx -y mcp-remote@latest \
+    exec npx -y mcp-remote@0.1.38 \
       https://mcp.miro.com/ \
       --transport http-first
     ;;
@@ -119,7 +119,7 @@ case "$PROFILE" in
     # registration, so mcp-remote's browser login works; tokens cached in
     # ~/.mcp-auth.
     load_npx
-    exec npx -y mcp-remote@latest \
+    exec npx -y mcp-remote@0.1.38 \
       https://mcp.atlassian.com/v1/sse
     ;;
 
@@ -129,7 +129,7 @@ case "$PROFILE" in
     # "mcp" scope and rejects mcp-remote's default openid/email/profile scopes,
     # so we override the registered client metadata to request just "mcp".
     load_npx
-    exec npx -y mcp-remote@latest \
+    exec npx -y mcp-remote@0.1.38 \
       https://mcp.stripe.com \
       --transport http-first \
       --static-oauth-client-metadata '{"scope":"mcp"}'

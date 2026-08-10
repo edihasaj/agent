@@ -3,6 +3,7 @@
 param(
     [switch]$Check,
     [switch]$PublicOnly,
+    [switch]$Headless,
     [switch]$AllClis,
     [string[]]$Cli,
     [string]$PrivateSkillsRoot,
@@ -26,6 +27,7 @@ $SharedSkillsRoot = Join-Path $UserHome ".agents\skills"
 $ClaudeSkillsRoot = Join-Path $UserHome ".claude\skills"
 $LegacyCodexRoot = Join-Path $UserHome ".codex\skills"
 $McpSyncScript = Join-Path $RepoRoot "scripts\sync-agent-mcps.mjs"
+$MaintenanceSyncScript = Join-Path $RepoRoot "scripts\sync-agent-maintenance.mjs"
 if (-not $PrivateMcpsConfig) {
     $PrivateMcpsConfig = [IO.Path]::GetFullPath((Join-Path $RepoRoot "../manager/config/mcps.json"))
 }
@@ -280,6 +282,7 @@ function Sync-Mcps([bool]$CheckOnly, [string[]]$Clis) {
     $Arguments = @($McpSyncScript)
     if ($CheckOnly) { $Arguments += "--check" }
     if ($PublicOnly) { $Arguments += "--public-only" }
+    if ($Headless) { $Arguments += @("--exclude", "chrome-devtools") }
     foreach ($CliName in $Clis) {
         $Arguments += @("--cli", $CliName)
     }
@@ -295,6 +298,29 @@ function Sync-Mcps([bool]$CheckOnly, [string[]]$Clis) {
     } finally {
         $env:AGENT_SETUP_HOME = $PreviousHome
         $env:PRIVATE_MCPS_CONFIG = $PreviousPrivateConfig
+    }
+}
+
+function Sync-Maintenance([bool]$CheckOnly, [string[]]$RequestedClis) {
+    $Node = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $Node) {
+        Write-Output "Maintenance state/hooks skipped: node missing"
+        return
+    }
+    $Arguments = @($MaintenanceSyncScript)
+    if ($CheckOnly) { $Arguments += "--check" }
+    if ($PublicOnly) { $Arguments += "--public-only" }
+    if ($Headless) { $Arguments += "--headless" }
+    if ($AllClis) {
+        $Arguments += "--all-clis"
+    } else {
+        foreach ($CliName in $RequestedClis) {
+            $Arguments += @("--cli", $CliName)
+        }
+    }
+    & $Node.Source @Arguments
+    if ($LASTEXITCODE -ne 0) {
+        $script:Failures++
     }
 }
 
@@ -345,6 +371,7 @@ if (-not $PublicOnly -and (Test-Path -LiteralPath $PrivateSkillsRoot -PathType C
 Sync-Skills ([bool]$Check) $Registries
 Sync-Instructions ([bool]$Check) $SelectedClis
 Sync-Mcps ([bool]$Check) $SelectedClis
+Sync-Maintenance ([bool]$Check) $RequestedClis
 if (-not $Check -and $script:Failures -eq 0) {
     Sync-Skills $true $Registries
     Sync-Instructions $true $SelectedClis
