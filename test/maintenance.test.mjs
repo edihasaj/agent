@@ -20,6 +20,18 @@ test("maintenance state records setup policy rather than detected executables", 
   });
 });
 
+test("maintenance accepts an empty option list for default desktop setup", () => {
+  const options = parseMaintenanceArgs([]);
+  assert.deepEqual(desiredSetupState(options, "darwin"), {
+    version: 1,
+    platform: "darwin",
+    publicOnly: false,
+    headless: false,
+    cliMode: "detected",
+    clis: [],
+  });
+});
+
 test("maintenance sync installs hooks for agent and manager and detects drift", (context) => {
   const root = mkdtempSync(join(tmpdir(), "agent-maintenance-"));
   context.after(() => rmSync(root, { recursive: true, force: true }));

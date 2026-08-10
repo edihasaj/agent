@@ -9,6 +9,10 @@ expected_platform=""
 requested_clis=()
 supported_clis=(codex claude opencode gemini copilot)
 
+# Non-login SSH and service shells commonly omit user-installed CLI locations.
+# Add only executable locations; never source profiles or secrets during setup.
+export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"
+
 usage() {
   cat <<'EOF'
 usage: setup-agent.sh [--check] [--public-only] [--headless] [--all-clis] [--cli NAME]...
@@ -193,7 +197,12 @@ elif [[ "${#requested_clis[@]}" -gt 0 ]]; then
   done
 fi
 if command -v node >/dev/null 2>&1; then
-  node "$repo_root/scripts/sync-agent-maintenance.mjs" "${maintenance_args[@]}"
+  if [[ "${#maintenance_args[@]}" -gt 0 ]]; then
+    node "$repo_root/scripts/sync-agent-maintenance.mjs" "${maintenance_args[@]}"
+  else
+    # macOS Bash 3.2 treats an empty array expansion as unbound under `set -u`.
+    node "$repo_root/scripts/sync-agent-maintenance.mjs"
+  fi
 else
   echo "Maintenance state/hooks skipped: node missing"
 fi
