@@ -4,13 +4,14 @@ set -euo pipefail
 mode="sync"
 include_private=1
 all_clis=0
+headless=0
 expected_platform=""
 requested_clis=()
 supported_clis=(codex claude opencode gemini copilot)
 
 usage() {
   cat <<'EOF'
-usage: setup-agent.sh [--check] [--public-only] [--all-clis] [--cli NAME]...
+usage: setup-agent.sh [--check] [--public-only] [--headless] [--all-clis] [--cli NAME]...
 
 Configure shared instructions, skills, and MCPs for the CLIs found on PATH.
 By default, only detected CLIs are configured. Re-running is safe.
@@ -18,6 +19,7 @@ By default, only detected CLIs are configured. Re-running is safe.
 Options:
   --check          report drift without changing files
   --public-only    skip private skills from the sibling manager repo
+  --headless       remove browser/GUI MCPs that need a local desktop
   --all-clis       configure every supported CLI, installed or not
   --cli NAME       configure one CLI explicitly; repeat for multiple CLIs
   -h, --help       show this help
@@ -30,6 +32,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --check) mode="check" ;;
     --public-only) include_private=0 ;;
+    --headless) headless=1 ;;
     --all-clis) all_clis=1 ;;
     --cli)
       [[ $# -ge 2 ]] || { echo "error: --cli requires a value" >&2; exit 2; }
@@ -166,6 +169,7 @@ fi
 mcp_args=()
 [[ "$mode" == "check" ]] && mcp_args+=(--check)
 [[ "$include_private" -eq 0 ]] && mcp_args+=(--public-only)
+[[ "$headless" -eq 1 ]] && mcp_args+=(--exclude chrome-devtools)
 for cli_name in "${selected_clis[@]}"; do
   mcp_args+=(--cli "$cli_name")
 done
@@ -191,6 +195,7 @@ if [[ "$mode" == "sync" ]]; then
   if [[ "${#selected_clis[@]}" -gt 0 && -x "$(command -v node 2>/dev/null || true)" ]]; then
     verify_mcp_args=(--check)
     [[ "$include_private" -eq 0 ]] && verify_mcp_args+=(--public-only)
+    [[ "$headless" -eq 1 ]] && verify_mcp_args+=(--exclude chrome-devtools)
     for cli_name in "${selected_clis[@]}"; do
       verify_mcp_args+=(--cli "$cli_name")
     done

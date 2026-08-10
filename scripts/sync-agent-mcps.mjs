@@ -13,23 +13,30 @@ const userHome = resolve(process.env.AGENT_SETUP_HOME || homedir());
 const platform = process.env.AGENT_SETUP_PLATFORM || (process.platform === "win32" ? "windows" : "posix");
 
 function usage(stream = process.stdout) {
-  stream.write(`usage: sync-agent-mcps [--check] [--public-only] [--cli NAME]...\n\n`);
+  stream.write(`usage: sync-agent-mcps [--check] [--public-only] [--exclude NAME] [--cli NAME]...\n\n`);
   stream.write(`Register managed public/private MCPs in installed agent CLIs.\n`);
   stream.write(`Existing unmanaged MCPs are preserved. Re-running is safe.\n\n`);
   stream.write(`Options:\n`);
   stream.write(`  --check          report drift without changing configuration\n`);
   stream.write(`  --public-only    ignore ../manager/config/mcps.json\n`);
+  stream.write(`  --exclude NAME   remove and skip one managed MCP; repeat as needed\n`);
   stream.write(`  --cli NAME       select a CLI; repeat for multiple CLIs\n`);
   stream.write(`  -h, --help       show this help\n\n`);
   stream.write(`Supported CLIs: ${supportedClis.join(", ")}\n`);
 }
 
 function parseArgs(argv) {
-  const options = { check: false, publicOnly: false, clis: [] };
+  const options = { check: false, publicOnly: false, clis: [], excluded: [] };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (argument === "--check") options.check = true;
     else if (argument === "--public-only") options.publicOnly = true;
+    else if (argument === "--exclude") {
+      const name = argv[index + 1];
+      if (!name) throw new Error("--exclude requires a value");
+      if (!options.excluded.includes(name)) options.excluded.push(name);
+      index += 1;
+    }
     else if (argument === "--cli") {
       const cli = argv[index + 1];
       if (!cli) throw new Error("--cli requires a value");
@@ -241,6 +248,10 @@ function main() {
   const publicServers = loadManifest(publicPath, true);
   const privateServers = options.publicOnly ? [] : loadManifest(privatePath, false);
   const servers = mergedServers(publicServers, privateServers);
+  const managedNames = new Set(servers.map((server) => server.name));
+  for (const name of options.excluded) {
+    if (!managedNames.has(name)) throw new Error(`cannot exclude unmanaged MCP: ${name}`);
+  }
   const selectedClis = options.clis.length > 0
     ? options.clis
     : supportedClis.filter(executableExists);
@@ -257,6 +268,28 @@ function main() {
     }
     for (const server of servers) {
       if (server.enabled === false || !server.clis?.includes(cli)) continue;
+      if (options.excluded.includes(server.name)) {
+        try {
+          const current = currentCliConfig(cli, server.name);
+          if (!current) {
+            matched += 1;
+            continue;
+          }
+          if (options.check) {
+            process.stderr.write(`unexpected: ${cli}/${server.name} is excluded\n`);
+            failures += 1;
+            continue;
+          }
+          if (cli === "opencode") removeOpenCodeConfig(server.name);
+          else removeCliConfig(cli, server.name);
+          process.stdout.write(`removed excluded: ${cli}/${server.name}\n`);
+          changed += 1;
+        } catch (error) {
+          process.stderr.write(`error: ${cli}/${server.name}: ${error.message}\n`);
+          failures += 1;
+        }
+        continue;
+      }
       const missing = (server.requires || []).filter((command) => !executableExists(command));
       if (missing.length > 0) {
         process.stdout.write(`skip: ${cli}/${server.name} missing ${missing.join(",")}\n`);

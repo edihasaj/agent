@@ -38,6 +38,7 @@ endpoint and organization-specific details stay private.
 ~/Projects/agent/bin/sync-agent-mcps
 ~/Projects/agent/bin/sync-agent-mcps --check
 ~/Projects/agent/bin/sync-agent-mcps --public-only --cli codex
+~/Projects/agent/bin/sync-agent-mcps --exclude chrome-devtools --cli codex
 ```
 
 The synchronizer supports Codex, Claude, Gemini, GitHub Copilot, and OpenCode.
@@ -50,6 +51,9 @@ Manifest command arrays use `{repo}` and `{home}` placeholders and provide
 `posix` and `windows` variants. `requires` lists executable prerequisites; a
 missing prerequisite skips that registration without breaking instruction or
 skill setup. `replaces` lists old registration names for automatic migrations.
+`--exclude NAME` removes a managed registration instead of merely skipping it;
+`setup-linux.sh --headless` uses this for `chrome-devtools` on servers without a
+local browser/desktop.
 Never put credentials in either manifest.
 
 ### Miro REST helper (`scripts/miro`)
