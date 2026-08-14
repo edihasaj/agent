@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workstation Ops"
+  short_description: "Operate browsers, Mac UI, and app tests"
+  default_prompt: "Use $workstation-ops to inspect and operate this app with the right local tool."
