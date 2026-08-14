@@ -18,7 +18,7 @@ function usage(stream = process.stdout) {
   stream.write(`Existing unmanaged MCPs are preserved. Re-running is safe.\n\n`);
   stream.write(`Options:\n`);
   stream.write(`  --check          report drift without changing configuration\n`);
-  stream.write(`  --public-only    ignore ../manager/config/mcps.json\n`);
+  stream.write(`  --public-only    ignore ../manager/configs/mcps.json\n`);
   stream.write(`  --exclude NAME   remove and skip one managed MCP; repeat as needed\n`);
   stream.write(`  --cli NAME       select a CLI; repeat for multiple CLIs\n`);
   stream.write(`  -h, --help       show this help\n\n`);
@@ -243,8 +243,8 @@ function main() {
     process.exit(2);
   }
 
-  const publicPath = process.env.AGENT_MCPS_CONFIG || join(repoRoot, "config", "mcps.json");
-  const privatePath = process.env.PRIVATE_MCPS_CONFIG || resolve(repoRoot, "..", "manager", "config", "mcps.json");
+  const publicPath = process.env.AGENT_MCPS_CONFIG || join(repoRoot, "configs", "mcps.json");
+  const privatePath = process.env.PRIVATE_MCPS_CONFIG || resolve(repoRoot, "..", "manager", "configs", "mcps.json");
   const publicServers = loadManifest(publicPath, true);
   const privateServers = options.publicOnly ? [] : loadManifest(privatePath, false);
   const servers = mergedServers(publicServers, privateServers);

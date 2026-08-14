@@ -20,12 +20,12 @@ Use `~/Projects/agent/bin/agent-mcp <profile>` from global MCP config. Keep AGEN
 - `stripe` -> `mcp-remote@0.1.38` to `https://mcp.stripe.com` (Stripe hosted remote MCP with OAuth 2.1 browser login and tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
 - `guiport` -> `guiport serve --mcp`
 
-Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/config/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.
+Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/configs/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.
 
 ## Managed registrations
 
-`config/mcps.json` is the public registration source. The optional private
-overlay uses the same schema at `~/Projects/manager/config/mcps.json`; private
+`configs/mcps.json` is the public registration source. The optional private
+overlay uses the same schema at `~/Projects/manager/configs/mcps.json`; private
 entries add new servers or override public entries by name.
 
 The default public set contains only `chrome-devtools`. Recall owns its own MCP

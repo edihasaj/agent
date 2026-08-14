@@ -29,7 +29,7 @@ $LegacyCodexRoot = Join-Path $UserHome ".codex\skills"
 $McpSyncScript = Join-Path $RepoRoot "scripts\sync-agent-mcps.mjs"
 $MaintenanceSyncScript = Join-Path $RepoRoot "scripts\sync-agent-maintenance.mjs"
 if (-not $PrivateMcpsConfig) {
-    $PrivateMcpsConfig = [IO.Path]::GetFullPath((Join-Path $RepoRoot "../manager/config/mcps.json"))
+    $PrivateMcpsConfig = [IO.Path]::GetFullPath((Join-Path $RepoRoot "../manager/configs/mcps.json"))
 }
 $script:Failures = 0
 

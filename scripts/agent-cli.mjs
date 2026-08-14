@@ -164,8 +164,8 @@ export function runDoctor(environment = process.env) {
     detail: existsSync(launcher) ? launcher : "bin/agent-mcp missing",
   });
 
-  const publicServers = loadJson(resolve(repoRoot, "config", "mcps.json")).servers || [];
-  const privatePath = resolve(managerRoot, "config", "mcps.json");
+  const publicServers = loadJson(resolve(repoRoot, "configs", "mcps.json")).servers || [];
+  const privatePath = resolve(managerRoot, "configs", "mcps.json");
   const privateServers = !state.publicOnly && existsSync(privatePath) ? loadJson(privatePath).servers || [] : [];
   const servers = mergeServers(publicServers, privateServers);
   const clis = selectedClis(state, platform, doctorEnvironment.PATH);
