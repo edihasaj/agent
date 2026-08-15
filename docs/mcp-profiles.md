@@ -24,25 +24,24 @@ Private/org-specific profiles (and their setup notes) live in the private overla
 
 ## Managed registrations
 
-`configs/mcps.json` is the public registration source. The optional private
-overlay uses the same schema at `~/Projects/manager/configs/mcps.json`; private
-entries add new servers or override public entries by name.
+The public repository does not keep a second MCP manifest. Runtime-owned MCPs,
+hosted connectors, and plugins remain visible through each client's MCP list.
+Agent setup changes only the private registrations declared in
+`~/Projects/manager/configs/mcps.json`.
 
-The default public set contains only `chrome-devtools`. Recall owns its own MCP
-registration through `recall setup`, so agent setup never overwrites it.
-OAuth-heavy and project-specific profiles remain opt-in to avoid loading unused
-tools in every session. The private set currently enables `glitchtip`; its
-endpoint and organization-specific details stay private.
+`chrome-devtools` remains an optional launcher profile for explicit fallback
+use, but setup does not register it globally. Recall owns its own registration
+through `recall setup`. OAuth-heavy and project-specific profiles remain opt-in
+to avoid loading unused tools in every session.
 
 ```bash
 ~/Projects/agent/bin/sync-agent-mcps
 ~/Projects/agent/bin/sync-agent-mcps --check
 ~/Projects/agent/bin/sync-agent-mcps --public-only --cli codex
-~/Projects/agent/bin/sync-agent-mcps --exclude chrome-devtools --cli codex
 ```
 
 The synchronizer supports Codex, Claude, Gemini, GitHub Copilot, and OpenCode.
-It owns only names present in the manifests. Other user entries, Codex app MCPs,
+It owns only names present in the private manifest. Other user entries, Codex app MCPs,
 hosted connectors/plugins, and repository `.mcp.json` files are preserved.
 OpenCode JSONC configs are reported for manual merge instead of being rewritten
 without their comments.
@@ -51,10 +50,8 @@ Manifest command arrays use `{repo}` and `{home}` placeholders and provide
 `posix` and `windows` variants. `requires` lists executable prerequisites; a
 missing prerequisite skips that registration without breaking instruction or
 skill setup. `replaces` lists old registration names for automatic migrations.
-`--exclude NAME` removes a managed registration instead of merely skipping it;
-`setup-linux.sh --headless` uses this for `chrome-devtools` on servers without a
-local browser/desktop.
-Never put credentials in either manifest.
+`--exclude NAME` removes a managed registration instead of merely skipping it.
+Never put credentials in the manifest.
 
 Runtime npm packages use reviewed exact versions rather than floating tags.
 Check upstream releases deliberately, update the launcher and platform command

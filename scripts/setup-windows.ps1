@@ -283,7 +283,6 @@ function Sync-Mcps([bool]$CheckOnly, [string[]]$Clis) {
     $Arguments = @($McpSyncScript)
     if ($CheckOnly) { $Arguments += "--check" }
     if ($PublicOnly) { $Arguments += "--public-only" }
-    if ($Headless) { $Arguments += @("--exclude", "chrome-devtools") }
     foreach ($CliName in $Clis) {
         $Arguments += @("--cli", $CliName)
     }

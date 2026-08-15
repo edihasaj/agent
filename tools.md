@@ -20,7 +20,7 @@ Repository entry points:
 
 - `bin/agent` — setup diagnostics
 - `bin/agent-mcp` — public MCP profile launcher
-- `bin/sync-agent-mcps` — reconcile MCP registrations
+- `bin/sync-agent-mcps` — reconcile private manager MCP registrations
 - `scripts/setup-agent.sh` — portable POSIX setup core
 - `scripts/setup-agent-machine.sh` — guided macOS workstation bootstrap
 - `scripts/sync-agent-helpers.sh` — install and check shared helper commands

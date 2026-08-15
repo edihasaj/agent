@@ -27,7 +27,7 @@ Useful modes:
 
 `-Check` reports drift without changing files. `-PublicOnly` excludes the
 optional sibling manager overlay. Re-run the normal setup after changing
-`AGENTS.MD`, public skills, or `configs/mcps.json`.
+`AGENTS.MD`, public skills, or the manager MCP manifest.
 
 Requirements: PowerShell, Git, and Node.js. The `abx` installer selects the
 supported Windows package for the current architecture.

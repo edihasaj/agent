@@ -185,7 +185,6 @@ fi
 mcp_args=()
 [[ "$mode" == "check" ]] && mcp_args+=(--check)
 [[ "$include_private" -eq 0 ]] && mcp_args+=(--public-only)
-[[ "$headless" -eq 1 ]] && mcp_args+=(--exclude chrome-devtools)
 for cli_name in "${selected_clis[@]}"; do
   mcp_args+=(--cli "$cli_name")
 done
@@ -233,7 +232,6 @@ if [[ "$mode" == "sync" ]]; then
   if [[ "${#selected_clis[@]}" -gt 0 && -x "$(command -v node 2>/dev/null || true)" ]]; then
     verify_mcp_args=(--check)
     [[ "$include_private" -eq 0 ]] && verify_mcp_args+=(--public-only)
-    [[ "$headless" -eq 1 ]] && verify_mcp_args+=(--exclude chrome-devtools)
     for cli_name in "${selected_clis[@]}"; do
       verify_mcp_args+=(--cli "$cli_name")
     done

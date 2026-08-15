@@ -14,7 +14,7 @@ const platform = process.env.AGENT_SETUP_PLATFORM || (process.platform === "win3
 
 function usage(stream = process.stdout) {
   stream.write(`usage: sync-agent-mcps [--check] [--public-only] [--exclude NAME] [--cli NAME]...\n\n`);
-  stream.write(`Register managed public/private MCPs in installed agent CLIs.\n`);
+  stream.write(`Register managed private MCPs in installed agent CLIs.\n`);
   stream.write(`Existing unmanaged MCPs are preserved. Re-running is safe.\n\n`);
   stream.write(`Options:\n`);
   stream.write(`  --check          report drift without changing configuration\n`);
@@ -87,14 +87,6 @@ function loadManifest(path, required) {
     names.add(server.name);
   }
   return parsed.servers;
-}
-
-function mergedServers(publicServers, privateServers) {
-  const servers = new Map(publicServers.map((server) => [server.name, server]));
-  for (const override of privateServers) {
-    servers.set(override.name, { ...(servers.get(override.name) || {}), ...override });
-  }
-  return [...servers.values()];
 }
 
 function expand(value) {
@@ -243,11 +235,8 @@ function main() {
     process.exit(2);
   }
 
-  const publicPath = process.env.AGENT_MCPS_CONFIG || join(repoRoot, "configs", "mcps.json");
   const privatePath = process.env.PRIVATE_MCPS_CONFIG || resolve(repoRoot, "..", "manager", "configs", "mcps.json");
-  const publicServers = loadManifest(publicPath, true);
-  const privateServers = options.publicOnly ? [] : loadManifest(privatePath, false);
-  const servers = mergedServers(publicServers, privateServers);
+  const servers = options.publicOnly ? [] : loadManifest(privatePath, false);
   const managedNames = new Set(servers.map((server) => server.name));
   for (const name of options.excluded) {
     if (!managedNames.has(name)) throw new Error(`cannot exclude unmanaged MCP: ${name}`);

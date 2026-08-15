@@ -49,14 +49,6 @@ function loadJson(path) {
   return JSON.parse(readFileSync(path, "utf8"));
 }
 
-export function mergeServers(publicServers, privateServers) {
-  const merged = new Map(publicServers.map((server) => [server.name, server]));
-  for (const server of privateServers) {
-    merged.set(server.name, { ...(merged.get(server.name) || {}), ...server });
-  }
-  return [...merged.values()];
-}
-
 function setupArguments(state) {
   const args = ["--check"];
   if (state.publicOnly) args.push("--public-only");
@@ -164,10 +156,8 @@ export function runDoctor(environment = process.env) {
     detail: existsSync(launcher) ? launcher : "bin/agent-mcp missing",
   });
 
-  const publicServers = loadJson(resolve(repoRoot, "configs", "mcps.json")).servers || [];
   const privatePath = resolve(managerRoot, "configs", "mcps.json");
-  const privateServers = !state.publicOnly && existsSync(privatePath) ? loadJson(privatePath).servers || [] : [];
-  const servers = mergeServers(publicServers, privateServers);
+  const servers = !state.publicOnly && existsSync(privatePath) ? loadJson(privatePath).servers || [] : [];
   const clis = selectedClis(state, platform, doctorEnvironment.PATH);
   for (const server of servers) {
     if (server.enabled === false || (state.headless && server.name === "chrome-devtools")) continue;
