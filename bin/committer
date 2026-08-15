@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+#
+# Commit ONLY the paths you name.
+#
+# `git commit -a` and `git add .` sweep up whatever else is in the tree —
+# another agent's edits, a debug print, a stray config. This refuses to do
+# that: every path is explicit, "." is rejected, and the commit is scoped with
+# `git commit -- <paths>` so nothing unlisted can ride along.
+#
+# Usage: committer [--force] "commit message" "file" ["file" ...]
+#   --force  delete a stale .git/index.lock and retry once
+
+set -euo pipefail
+# Disable glob expansion so bracketed paths survive intact.
+set -f
+
+usage() {
+  printf 'Usage: %s [--force] "commit message" "file" ["file" ...]\n' "$(basename "$0")" >&2
+  exit 2
+}
+
+[ "$#" -lt 2 ] && usage
+
+force_delete_lock=false
+if [ "${1:-}" = "--force" ]; then
+  force_delete_lock=true
+  shift
+fi
+
+[ "$#" -lt 2 ] && usage
+
+commit_message=$1
+shift
+
+if [[ "$commit_message" != *[![:space:]]* ]]; then
+  printf 'Error: commit message must not be empty\n' >&2
+  exit 1
+fi
+
+# Catches `committer file.py "message"` — the arguments the wrong way round.
+if [ -e "$commit_message" ]; then
+  printf 'Error: first argument looks like a file path ("%s"); provide the commit message first\n' "$commit_message" >&2
+  exit 1
+fi
+
+[ "$#" -eq 0 ] && usage
+
+files=("$@")
+
+for file in "${files[@]}"; do
+  if [ "$file" = "." ]; then
+    printf 'Error: "." is not allowed; list specific paths instead\n' >&2
+    exit 1
+  fi
+done
+
+run_git_commit() {
+  # Stage the named paths first: `git commit -- <paths>` alone cannot commit a
+  # file git does not yet track, so new files would be silently skipped.
+  # Staging only these paths keeps the guarantee that nothing unlisted rides
+  # along, even if the index already had other things in it.
+  git add -- "${files[@]}"
+  git commit -m "$commit_message" -- "${files[@]}"
+}
+
+if ! run_git_commit 2>/tmp/committer.err; then
+  if grep -q 'index.lock' /tmp/committer.err && [ "$force_delete_lock" = true ]; then
+    printf 'Removing stale index.lock and retrying\n' >&2
+    rm -f "$(git rev-parse --git-dir)/index.lock"
+    run_git_commit
+  else
+    cat /tmp/committer.err >&2
+    rm -f /tmp/committer.err
+    exit 1
+  fi
+fi
+rm -f /tmp/committer.err
+
+printf 'Committed "%s" with %d file(s)\n' "$commit_message" "${#files[@]}"
