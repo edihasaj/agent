@@ -65,9 +65,9 @@ Report as **risk level** (clear / minor collision / conflict), not legal advice.
 Recommend a proper counsel/TM search before filing.
 
 ### 6. Output
-A scored shortlist table + a one-line "grab X now" recommendation, and offer the
-next step: register + wire DNS via the **[[domain-dns-ops]]** skill (Cloudflare /
-DNSimple / Namecheap under `~/Projects/manager`).
+A scored shortlist table + a one-line "grab X now" recommendation. If the user
+also requests registration or DNS setup, hand off to an available domain/DNS
+operations skill; otherwise stop at availability and rights-risk guidance.
 
 ## Notes
 - **Availability heuristics differ from truth.** WHOIS "no match" is strong; DNS
@@ -77,5 +77,5 @@ DNSimple / Namecheap under `~/Projects/manager`).
   less-common word, or a coined term.
 - **Personal-but-portable wins**: an Albanian word nobody outside needs the
   backstory for (Farka) beats a generic English compound.
-- Hand off registration to `domain-dns-ops`; this skill stops at "confirmed
-  buyable + rights-risk noted".
+- This skill stops at "confirmed buyable + rights-risk noted" unless a separate
+  domain/DNS operations capability is available and explicitly requested.
