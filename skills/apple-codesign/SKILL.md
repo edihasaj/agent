@@ -15,7 +15,7 @@ One CLI for the whole Apple signing chain, app-agnostic. Credentials live in 1Pa
 with `OP_VAULT` (set it in your private `~/.profile`) or `--vault`.
 
 ```bash
-apple-codesign --help          # via uv launcher (scripts/apple-codesign)
+apple-codesign --help          # when linked onto PATH
 # or directly:
 uv run skills/apple-codesign/scripts/apple_codesign.py <cmd>
 ```

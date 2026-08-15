@@ -23,10 +23,6 @@ function die(msg, code = 1) {
   process.exit(code);
 }
 
-if (!TOKEN) {
-  die('MIRO_TOKEN not set. Add `export MIRO_TOKEN="…"` to ~/.profile (app scopes: boards:read, boards:write).', 78);
-}
-
 // Accept a full board URL or a bare id. Board ids often end in "=".
 function boardId(arg) {
   if (!arg) die('missing <boardUrlOrId>');
@@ -42,6 +38,9 @@ function itemId(arg) {
 }
 
 async function api(method, path, body) {
+  if (!TOKEN) {
+    die('MIRO_TOKEN not set (required scopes: boards:read, boards:write).', 78);
+  }
   const res = await fetch(`${API}${path}`, {
     method,
     headers: {
@@ -117,13 +116,19 @@ async function main() {
       break;
     }
     case 'board-delete': {
+      if (!rest.includes('--yes')) die('board-delete requires --yes');
       const bid = encodeURIComponent(boardId(rest[0]));
       await api('DELETE', `/boards/${bid}`);
       console.log(`deleted board ${boardId(rest[0])}`);
       break;
     }
+    case '-h':
+    case '--help':
+    case undefined:
+      console.log('usage: miro whoami | list <board> [--type T] | get <board> <id> | delete <board> <id...> | move <board> <id> --x N --y N | board-delete <board> --yes');
+      break;
     default:
-      console.error('usage: miro whoami | list <board> [--type T] | get <board> <id> | delete <board> <id...> | move <board> <id> --x N --y N | board-delete <board>');
+      console.error('usage: miro whoami | list <board> [--type T] | get <board> <id> | delete <board> <id...> | move <board> <id> --x N --y N | board-delete <board> --yes');
       process.exit(64);
   }
 }

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Miro Board Operations"
+  short_description: "Inspect and modify Miro boards via REST"
+  default_prompt: "Use $miro-board-ops to inspect or modify items on a Miro board."
