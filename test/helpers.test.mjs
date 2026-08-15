@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 const script = resolve("scripts/sync-agent-helpers.sh");
-const committer = resolve("scripts/committer");
+const committer = resolve("bin/committer");
 
 function run(home, ...args) {
   return spawnSync("bash", [script, ...args], { encoding: "utf8", env: { ...process.env, HOME: home } });
@@ -17,6 +17,7 @@ test("helper sync installs committer into the user executable directory", (conte
   context.after(() => rmSync(home, { recursive: true, force: true }));
   const target = join(home, ".local", "bin", "committer");
 
+  assert.equal(existsSync(committer), true);
   assert.equal(run(home).status, 0);
   assert.equal(lstatSync(target).isSymbolicLink(), true);
   assert.equal(readlinkSync(target), committer);

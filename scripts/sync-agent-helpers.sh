@@ -12,7 +12,7 @@ if [[ $# -gt 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source_path="$repo_root/scripts/committer"
+source_path="$repo_root/bin/committer"
 target_dir="$HOME/.local/bin"
 target_path="$target_dir/committer"
 
