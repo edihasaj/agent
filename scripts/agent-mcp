@@ -48,7 +48,7 @@ Profiles:
   guiport          macOS desktop automation MCP
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
-Private/org-specific profiles live in ~/Projects/manager/configs/agent-mcp-private.
+Private/org-specific profiles live in ~/Projects/manager/scripts/mcp/agent-mcp-private.
 USAGE
 }
 
@@ -57,7 +57,7 @@ if [[ -z "$PROFILE" || "$PROFILE" == "-h" || "$PROFILE" == "--help" ]]; then
   exit 0
 fi
 
-PRIVATE_OVERLAY="$HOME/Projects/manager/configs/agent-mcp-private"
+PRIVATE_OVERLAY="$HOME/Projects/manager/scripts/mcp/agent-mcp-private"
 if [[ -x "$PRIVATE_OVERLAY" ]] && "$PRIVATE_OVERLAY" --has "$PROFILE" 2>/dev/null; then
   exec "$PRIVATE_OVERLAY" "$PROFILE"
 fi
