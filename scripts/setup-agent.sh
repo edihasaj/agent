@@ -124,6 +124,10 @@ if [[ -d "$private_root" ]]; then
   private_root="$(cd "$private_root" && pwd)"
 fi
 
+abx_args=(--platform "$platform")
+[[ "$mode" == "check" ]] && abx_args+=(--check)
+"$repo_root/scripts/install/abx.sh" "${abx_args[@]}"
+
 printf 'Agent setup: platform=%s mode=%s\n' "$platform" "$mode"
 if [[ "${#selected_clis[@]}" -gt 0 ]]; then
   printf 'CLIs: %s\n' "$(IFS=,; echo "${selected_clis[*]}")"

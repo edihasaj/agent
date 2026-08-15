@@ -28,6 +28,7 @@ $ClaudeSkillsRoot = Join-Path $UserHome ".claude\skills"
 $LegacyCodexRoot = Join-Path $UserHome ".codex\skills"
 $McpSyncScript = Join-Path $RepoRoot "scripts\sync-agent-mcps.mjs"
 $MaintenanceSyncScript = Join-Path $RepoRoot "scripts\sync-agent-maintenance.mjs"
+$AbxInstallScript = Join-Path $RepoRoot "scripts\install\abx.ps1"
 if (-not $PrivateMcpsConfig) {
     $PrivateMcpsConfig = [IO.Path]::GetFullPath((Join-Path $RepoRoot "../manager/configs/mcps.json"))
 }
@@ -366,6 +367,12 @@ if (-not $PublicOnly -and (Test-Path -LiteralPath $PrivateSkillsRoot -PathType C
     Write-Output "Private skills: $PrivateSkillsRoot"
 } else {
     Write-Output "Private skills: disabled or not found"
+}
+
+try {
+    & $AbxInstallScript -Check:$Check -UserHome $UserHome
+} catch {
+    Write-Failure "abx: $($_.Exception.Message)"
 }
 
 Sync-Skills ([bool]$Check) $Registries

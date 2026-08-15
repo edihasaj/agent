@@ -9,6 +9,7 @@ set -euo pipefail
 
 upgrade=0
 [ "${1:-}" = "--upgrade" ] && upgrade=1
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 if ! command -v brew >/dev/null 2>&1; then
   echo "error: Homebrew not found — install it first: https://brew.sh" >&2
@@ -32,7 +33,6 @@ fi
 fleet=(
   "edihasaj/tap/vmlab:vmlab"        # cross-OS verify orchestrator
   "edihasaj/guiport/guiport:guiport" # macOS desktop driver (AX + OCR)
-  "edihasaj/abx/abx:abx"            # headless browser CLI
 )
 
 if ! command -v bun >/dev/null 2>&1; then
@@ -69,6 +69,10 @@ for entry in "${fleet[@]}"; do
     [ "$kegver" = "$pathver" ] || echo "    warn: $cmd still $pathver after relink — a non-brew copy earlier in PATH may shadow it"
   fi
 done
+
+abx_args=(--platform macos)
+[[ "$upgrade" -eq 1 ]] && abx_args+=(--upgrade)
+"$repo_root/scripts/install/abx.sh" "${abx_args[@]}"
 
 # shotport is open-source but source-built (no Homebrew bottle yet): clone the
 # public repo into ~/Projects and install the standalone compiled binary into
@@ -127,7 +131,7 @@ if [ -d "$probeport_dir" ]; then
   (cd "$probeport_dir" && pnpm install --frozen-lockfile && pnpm build)
 fi
 
-agent_scripts_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+agent_scripts_dir="$repo_root"
 probeport_wrapper="$agent_scripts_dir/bin/probeport"
 probeport_link="$HOME/.local/bin/probeport"
 mkdir -p "$HOME/.local/bin"
@@ -135,15 +139,6 @@ if [ ! -e "$probeport_link" ] || [ -L "$probeport_link" ]; then
   ln -sfn "$probeport_wrapper" "$probeport_link"
 elif [ "$probeport_link" != "$probeport_wrapper" ]; then
   echo "warn: $probeport_link exists and is not a symlink — kept it unchanged"
-fi
-
-# abx drives Playwright's Chromium — fetch it once if the cache is empty.
-if command -v abx >/dev/null 2>&1; then
-  browsers="${PLAYWRIGHT_BROWSERS_PATH:-$HOME/Library/Caches/ms-playwright}"
-  if ! compgen -G "$browsers/chromium*" >/dev/null 2>&1; then
-    echo "==> fetching Chromium for abx"
-    abx install-browser || echo "warn: 'abx install-browser' failed — run it manually"
-  fi
 fi
 
 cat <<'EOS'
