@@ -1,0 +1,19 @@
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Generated and local state
+bin/docs-list
+node_modules/
+tmp/
+.tmp/
+.pytest_cache/
+.ruff_cache/
+.recall/
+
+# Editor state
+.idea/
+.vscode/
+*.swp

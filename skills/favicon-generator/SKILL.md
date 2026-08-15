@@ -18,7 +18,8 @@ One CLI, one source image → full set of platform icons + manifest + SEO files 
 
 Need a square PNG or SVG, ideally **1024×1024+**. Non-square inputs are auto-padded to square on a transparent background.
 
-If the user has no source image, generate one first using the `nano-banana-pro` skill (resolution 1K is enough — 4K is overkill for icons), then pass that file to `--source`.
+If the user has no source image, generate a square 1024×1024 PNG with the
+available image-generation tool, then pass that file to `--source`.
 
 ## Run it
 
@@ -109,13 +110,9 @@ python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --pages "/,/privacy,/terms,/refund,/download"
 ```
 
-**Generate logo first via nano-banana-pro, then favicons:**
+**Generate a logo first, then favicons:**
 ```bash
-# 1) generate source
-uv run ~/Projects/agent/skills/nano-banana-pro/scripts/generate_image.py \
-  --prompt "minimalist app icon: <description>" \
-  --filename "logo.png" --resolution 1K
-# 2) generate favicons
+# First create ./logo.png with the available image-generation tool.
 python3 ~/Projects/agent/skills/favicon-generator/scripts/favicon.py \
   --source ./logo.png --platforms all --site-url https://example.com --name "App"
 ```

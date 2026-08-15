@@ -106,7 +106,7 @@ profile_line='export PATH="$HOME/Projects/agent/scripts:$HOME/Projects/agent/bin
 if [ -f "$HOME/.profile" ] && grep -Fq 'Projects/agent/scripts' "$HOME/.profile"; then
   echo "$HOME/.profile already exposes agent helpers"
 else
-  echo "Add this to ~/.profile for committer/docs-list/agent-mcp in future shells:"
+  echo "Add this to ~/.profile for agent helper commands in future shells:"
   echo "  $profile_line"
 fi
 
