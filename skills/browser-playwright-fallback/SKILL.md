@@ -1,17 +1,17 @@
 ---
 name: browser-playwright-fallback
-description: Deterministic browser automation via inline Playwright scripts. Use when the chrome-devtools MCP is unavailable (CI, headless server, MCP unreachable) or when the task needs a reproducible scripted flow (assertions, form fills, multi-step navigation, scraping) rather than the MCP's interactive model. No install step — the skill shells `npx playwright` which manages its own browser downloads on first run.
+description: Deterministic browser automation via inline Playwright scripts. Use only after abx is unavailable or lacks a required capability, or when a task specifically needs a reproducible raw Playwright flow. No permanent install required.
 ---
 
 # Browser Playwright Fallback
 
-Fallback layer below the `chrome-devtools` MCP (and the thin `bin/browser-tools` shell helper). Use when:
+Fallback layer below `abx`. Use when:
 
-- The MCP isn't reachable (no global Claude/Codex config, remote CI runner, daemon mode).
-- The flow needs to be deterministic and reproducible — e.g. CI smoke, regression check, scripted scrape. MCP is great for exploration; Playwright scripts are great for capturing a known-good flow.
-- You need assertions, timeouts, retry logic, or multi-page orchestration that's tedious through the MCP's one-call-at-a-time surface.
+- `abx` is unavailable or has failed after one corrected retry.
+- The flow needs raw Playwright APIs that `abx` does not expose, such as custom assertions or multi-page orchestration.
+- A checked-in or reproducible browser script is the requested artifact.
 
-Prefer the MCP for interactive debugging and ad-hoc inspection. Prefer `bin/browser-tools` for one-shot screenshot/eval in a shell pane where starting a fresh browser is overkill.
+Use `abx` for normal navigation, inspection, interaction, scraping, screenshots, and local web testing. Record the exact `abx` limitation before falling back.
 
 ## Prereqs
 
@@ -118,9 +118,9 @@ Fall back to this when an assertion is flaky and you want to see the page step t
 
 ## When to escalate beyond this fallback
 
-- **You need AI reasoning about page structure** (e.g. "click the button that looks like 'Continue' even if the text differs"). Reach for `chrome-devtools` MCP or Stagehand (`act` / `extract` / `observe` primitives over Playwright). Stagehand needs a Browserbase key for hosted mode; it works locally with a local LLM or Anthropic key.
+- **You need interactive DevTools inspection beyond `abx`.** Use the `chrome-devtools` MCP after recording the verified `abx` limitation.
 - **Long autonomous agent loops** where the agent picks the next action at runtime. `browser-use` (Python) is the widely-adopted 2026 choice, but it's an agent framework, not a fallback — use it as a separate task, not from this skill.
-- **Deep perf / network profiling** — that's squarely `chrome-devtools` MCP territory. Don't try to replicate DevTools semantics in a Playwright script.
+- **Deep performance or network profiling** — use the `chrome-devtools` MCP. Do not try to replicate DevTools semantics in a Playwright script.
 
 ## Gotchas
 
