@@ -14,6 +14,7 @@ Preferred local interfaces for common agent work. Run each command with
 | Simulator control | `axe` | Describes UI, taps, types, and sends hardware actions |
 | GitHub | `gh` | Issues, pull requests, releases, and CI |
 | Safe deletion | `trash` | Recoverable removal instead of direct deletion |
+| Scoped commits | `committer` | Commits exactly the paths provided; setup installs it under `~/.local/bin` |
 
 Repository entry points:
 
@@ -22,3 +23,4 @@ Repository entry points:
 - `bin/sync-agent-mcps` — reconcile MCP registrations
 - `scripts/setup-agent.sh` — portable POSIX setup core
 - `scripts/setup-agent-machine.sh` — guided macOS workstation bootstrap
+- `scripts/sync-agent-helpers.sh` — install and check shared helper commands

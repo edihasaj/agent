@@ -145,6 +145,14 @@ else
   printf 'Private skills: disabled or not found\n'
 fi
 
+helper_args=()
+[[ "$mode" == "check" ]] && helper_args+=(--check)
+if [[ "${#helper_args[@]}" -gt 0 ]]; then
+  "$repo_root/scripts/sync-agent-helpers.sh" "${helper_args[@]}"
+else
+  "$repo_root/scripts/sync-agent-helpers.sh"
+fi
+
 instruction_args=()
 [[ "$mode" == "check" ]] && instruction_args+=(--check)
 instruction_args+=(--cli home)

@@ -27,8 +27,9 @@ Windows PowerShell:
 
 Setup detects installed agent CLIs, links `AGENTS.MD`, registers public skills,
 and reconciles managed MCP entries. The macOS and Linux entry points also
-install `abx` when needed. Re-running setup is safe; use `--check` to report
-drift without changing machine state.
+install `abx` when needed and link `scripts/committer` into
+`~/.local/bin/committer`. Re-running setup is safe; use `--check` to report drift
+without changing machine state.
 
 ## Layout
 
