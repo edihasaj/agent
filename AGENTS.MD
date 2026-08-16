@@ -29,6 +29,10 @@ behavior only; project-specific guidance belongs in each repository.
 - Update documentation when behavior or setup changes.
 - Add regression coverage for bugs when practical.
 - Reuse the project's package manager and established patterns.
+- Preserve existing behavior. Understand what mature or production code does
+  before changing it, protect established workflows, data, integrations, and
+  email or payment paths, and prefer a bounded change over replacing a stable
+  mechanism. Verify the unchanged critical paths explicitly, not by assumption.
 
 ## Safety
 
