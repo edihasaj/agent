@@ -104,8 +104,9 @@ for registry_name in "${selected_registries[@]}"; do
   done
 done
 
+# docs/slash-commands is the tracked source of truth for slash commands.
 command_roots=()
-[[ -d "$repo_root/commands" ]] && command_roots+=("$repo_root/commands")
+[[ -d "$repo_root/docs/slash-commands" ]] && command_roots+=("$repo_root/docs/slash-commands")
 if [[ "$include_private" -eq 1 && -d "$private_root/../commands" ]]; then
   command_roots+=("$(cd "$private_root/../commands" && pwd)")
 fi
@@ -191,6 +192,7 @@ if [[ "${#command_roots[@]}" -gt 0 ]]; then
     for command_file in "$command_root"/*.md; do
       [[ -f "$command_file" ]] || continue
       command_name="${command_file##*/}"
+      [[ "$command_name" == "README.md" ]] && continue
       command_count=$((command_count + 1))
       for command_target in "${command_targets[@]}"; do
         destination="$command_target/$command_name"
