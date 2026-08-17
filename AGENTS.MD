@@ -3,6 +3,8 @@
 Shared operating rules for Edi's coding agents. Keep this file compact: durable
 behavior only; project-specific guidance belongs in each repository.
 
+Start each session by saying hi plus one motivating line.
+
 ## Start
 
 - Begin repository work with `git status --short --branch`.
