@@ -11,7 +11,7 @@ Use `~/Projects/agent/bin/agent-mcp <profile>` from global MCP config. Keep AGEN
 
 ## Profiles
 
-- `chrome-devtools` -> `npx -y chrome-devtools-mcp@1.7.0 --autoConnect`
+- `chrome-devtools` -> `chrome-devtools-mcp@1.7.0 --autoConnect`
 - `recall` -> local Recall app MCP runtime
 - `zapfeed` -> `mcp-remote@0.1.38` to `https://zapfeed.io/api/mcp`
 - `miro` -> `mcp-remote@0.1.38` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
@@ -19,6 +19,37 @@ Use `~/Projects/agent/bin/agent-mcp <profile>` from global MCP config. Keep AGEN
 - `atlassian` -> `mcp-remote@0.1.38` to `https://mcp.atlassian.com/v1/sse` (Jira + Confluence; OAuth browser login, tokens cached in `~/.mcp-auth`)
 - `stripe` -> `mcp-remote@0.1.38` to `https://mcp.stripe.com` (Stripe hosted remote MCP with OAuth 2.1 browser login and tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
 - `guiport` -> `guiport serve --mcp`
+
+## Never launch a stdio server through `npx`
+
+Node profiles install a pinned version once into `~/.cache/agent-mcp/pkgs/`
+(override with `AGENT_MCP_PKG_ROOT`) and then `exec node` the entry point
+directly. `npx -y <pkg>` looks equivalent but is not: it runs the server under
+an `npm exec` parent that lives for the whole session, which means
+
+- **two node processes per client session instead of one**, and
+- the client's SIGTERM lands on the `npm exec` wrapper, not the server. The
+  server is reparented to launchd and keeps running. An OAuth profile orphaned
+  this way retries its browser login forever.
+
+Both failure modes were real on 2026-08-17: 92 stray `mcp-remote` procs
+(3.8 GB) from a globally-registered Sentry profile, 69 stray
+`chrome-devtools-mcp` procs (2.7 GB), and an orphaned Miro profile reopening
+the Miro login page indefinitely against a half-registered OAuth client.
+
+Two rules follow:
+
+1. Add node profiles with `exec_npm_bin <pkg@version> <bin> [args...]`, never
+   `npx`. Pin the version — the cache key is the full spec.
+2. Register OAuth-heavy or occasional profiles per-project, not globally. Every
+   client starts *all* configured stdio servers at session start, whether or
+   not a tool is ever called, so a global registration is a per-session process
+   whether you use it or not.
+
+`load_machine_env` sources `~/.profile` and `~/.zprofile` with `set +eu`. Those
+files are written for interactive zsh and commonly pull in snippets that are
+not `set -eu` clean (google-cloud-sdk's `path.zsh.inc` dies on an unbound `$1`),
+which otherwise kills the launcher before the server starts.
 
 Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/scripts/mcp/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.
 
