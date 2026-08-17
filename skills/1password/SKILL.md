@@ -1,7 +1,7 @@
 ---
 name: 1password
 description: Set up and use 1Password CLI (op). Use when installing the CLI, choosing desktop or lock-independent service-account authentication, enabling desktop app integration, signing in, maintaining a persistent tmux session, or reading/injecting/running targeted secrets via op.
-metadata: {"clawdbot":{"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)"}]}}
+metadata: {"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)"}]}
 ---
 
 # 1Password CLI
