@@ -46,6 +46,37 @@ Two rules follow:
    not a tool is ever called, so a global registration is a per-session process
    whether you use it or not.
 
+## On-demand by default
+
+There is no lazy start in the MCP stdio transport: a client boots every
+configured server when the session opens and holds it for the session's whole
+life. Long-lived Zed/Codex sessions therefore accumulate servers nobody called.
+So the default is **not registered**, and you turn one on for the stretch of
+work that needs it:
+
+```bash
+# Claude Code — add for this session's work, drop it when done
+claude mcp add miro -- ~/Projects/agent/bin/agent-mcp miro
+claude mcp remove miro -s user
+
+# Claude Code — scope to one repo instead (only sessions in that repo pay)
+cd ~/Projects/<repo> && claude mcp add -s project miro -- ~/Projects/agent/bin/agent-mcp miro
+
+# Codex — flip the flag in ~/.codex/config.toml
+[mcp_servers.glitchtip]
+enabled = true
+```
+
+Servers that stay registered globally are only the ones every session genuinely
+uses: `recall` / `recall-cloud` (memory, needed at session start) and remote
+HTTP entries such as `zapfeed`, which cost no local process at all. Prefer an
+`http`/`url` registration over stdio wherever the vendor offers one — it has no
+process to strand.
+
+Profiles in the private manifest (`~/Projects/manager/configs/mcps.json`) are
+`enabled: false` for the same reason; `sync-agent-mcps` skips a disabled server
+rather than registering it.
+
 `load_machine_env` sources `~/.profile` and `~/.zprofile` with `set +eu`. Those
 files are written for interactive zsh and commonly pull in snippets that are
 not `set -eu` clean (google-cloud-sdk's `path.zsh.inc` dies on an unbound `$1`),
