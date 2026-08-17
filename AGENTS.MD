@@ -3,6 +3,19 @@
 Edi owns this. Start: say hi + 1 motivating line.
 Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 
+## Repositories
+
+- `~/Projects/agent`: this repo. Shared operating rules, skills, slash commands,
+  the MCP launcher, and machine setup. Public and credential-free.
+- `~/Projects/manager`: private ops. Runbooks, deployments, infrastructure, and
+  skills that route to private systems.
+- `~/Projects/oss`: third-party checkouts. Not ours; do not treat as a source of
+  truth for our tooling.
+
+Skills and commands live here and are linked into each runtime by
+`scripts/sync-agent-skills.sh`. Never keep a second copy of a skill or command
+elsewhere; a duplicate drifts and then breaks silently.
+
 ## Agent Protocol
 - Contact: Edi Hasaj (@edihasaj, edihasaj@gmail.com).
 - Workspace: `~/Projects`. Missing repo: clone `https://github.com/<owner>/<repo>.git` (default owner: `edihasaj`; keep original owner for other org repos).
