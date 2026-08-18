@@ -52,7 +52,8 @@ cursor_root="${CURSOR_SKILLS_HOME:-$HOME/.cursor/skills}"
 
 # Codex discovers skills only from "$CODEX_HOME/skills" and prompts only from
 # "$CODEX_HOME/prompts"; it does not read the neutral registry. Each profile is
-# a separate CODEX_HOME (~/.codex, ~/.codex-work, ...), so populate every one.
+# a separate CODEX_HOME (~/.codex, ~/.codex-primary, ~/.codex-secondary, ...),
+# so populate every one.
 codex_homes=()
 for codex_candidate in "$HOME"/.codex "$HOME"/.codex-*; do
   [[ -d "$codex_candidate" && -f "$codex_candidate/config.toml" ]] || continue
