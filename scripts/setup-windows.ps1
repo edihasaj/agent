@@ -27,6 +27,7 @@ $SharedSkillsRoot = Join-Path $UserHome ".agents\skills"
 $ClaudeSkillsRoot = Join-Path $UserHome ".claude\skills"
 $LegacyCodexRoot = Join-Path $UserHome ".codex\skills"
 $McpSyncScript = Join-Path $RepoRoot "scripts\sync-agent-mcps.mjs"
+$SettingsSyncScript = Join-Path $RepoRoot "scripts\sync-agent-settings.mjs"
 $MaintenanceSyncScript = Join-Path $RepoRoot "scripts\sync-agent-maintenance.mjs"
 $AbxInstallScript = Join-Path $RepoRoot "scripts\install\abx.ps1"
 if (-not $PrivateMcpsConfig) {
@@ -301,6 +302,32 @@ function Sync-Mcps([bool]$CheckOnly, [string[]]$Clis) {
     }
 }
 
+function Sync-Settings([bool]$CheckOnly, [string[]]$Clis) {
+    if ($Clis.Count -eq 0) {
+        return
+    }
+    $Node = Get-Command node -ErrorAction SilentlyContinue
+    if (-not $Node) {
+        Write-Output "CLI settings sync skipped: node missing"
+        return
+    }
+    $Arguments = @($SettingsSyncScript)
+    if ($CheckOnly) { $Arguments += "--check" }
+    foreach ($CliName in $Clis) {
+        $Arguments += @("--cli", $CliName)
+    }
+    $PreviousHome = $env:AGENT_SETUP_HOME
+    try {
+        $env:AGENT_SETUP_HOME = $UserHome
+        & $Node.Source @Arguments
+        if ($LASTEXITCODE -ne 0) {
+            $script:Failures++
+        }
+    } finally {
+        $env:AGENT_SETUP_HOME = $PreviousHome
+    }
+}
+
 function Sync-Maintenance([bool]$CheckOnly, [string[]]$RequestedClis) {
     $Node = Get-Command node -ErrorAction SilentlyContinue
     if (-not $Node) {
@@ -377,11 +404,13 @@ try {
 Sync-Skills ([bool]$Check) $Registries
 Sync-Instructions ([bool]$Check) $SelectedClis
 Sync-Mcps ([bool]$Check) $SelectedClis
+Sync-Settings ([bool]$Check) $SelectedClis
 Sync-Maintenance ([bool]$Check) $RequestedClis
 if (-not $Check -and $script:Failures -eq 0) {
     Sync-Skills $true $Registries
     Sync-Instructions $true $SelectedClis
     Sync-Mcps $true $SelectedClis
+    Sync-Settings $true $SelectedClis
 }
 
 if ($script:Failures -gt 0) {

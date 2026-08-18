@@ -146,7 +146,7 @@ export function runDoctor(environment = process.env) {
   checks.push({
     name: "shared-setup",
     status: setup.status === 0 ? "pass" : "fail",
-    detail: setup.status === 0 ? "instructions, skills, MCPs, state, and hooks match" : setupDetail || `setup check exited ${setup.status}`,
+    detail: setup.status === 0 ? "instructions, skills, MCPs, CLI settings, state, and hooks match" : setupDetail || `setup check exited ${setup.status}`,
   });
 
   const launcher = resolve(repoRoot, "bin", "agent-mcp");

@@ -196,6 +196,19 @@ if [[ "${#selected_clis[@]}" -gt 0 ]]; then
   fi
 fi
 
+settings_args=()
+[[ "$mode" == "check" ]] && settings_args+=(--check)
+for cli_name in "${selected_clis[@]}"; do
+  settings_args+=(--cli "$cli_name")
+done
+if [[ "${#selected_clis[@]}" -gt 0 ]]; then
+  if command -v node >/dev/null 2>&1; then
+    node "$repo_root/scripts/sync-agent-settings.mjs" "${settings_args[@]}"
+  else
+    echo "CLI settings sync skipped: node missing"
+  fi
+fi
+
 maintenance_args=()
 [[ "$mode" == "check" ]] && maintenance_args+=(--check)
 [[ "$include_private" -eq 0 ]] && maintenance_args+=(--public-only)
@@ -236,6 +249,11 @@ if [[ "$mode" == "sync" ]]; then
       verify_mcp_args+=(--cli "$cli_name")
     done
     node "$repo_root/scripts/sync-agent-mcps.mjs" "${verify_mcp_args[@]}"
+    verify_settings_args=(--check)
+    for cli_name in "${selected_clis[@]}"; do
+      verify_settings_args+=(--cli "$cli_name")
+    done
+    node "$repo_root/scripts/sync-agent-settings.mjs" "${verify_settings_args[@]}"
   fi
 fi
 

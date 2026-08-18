@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-18
+
+- Setup now pins the agent CLI settings this repo owns and checks them for
+  drift: `includeCoAuthoredBy=false` in `~/.claude/settings.json`, so no machine
+  lands commits co-authored by a model. Unmanaged keys are preserved
+  (`scripts/sync-agent-settings.mjs`, wired into POSIX and Windows setup and
+  into `agent doctor`).
+
 ## 2026-08-15
 
 - Rebuilt the public repository from owned sources and removed imported files.

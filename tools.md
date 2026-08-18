@@ -24,3 +24,4 @@ Repository entry points:
 - `scripts/setup-agent.sh` — portable POSIX setup core
 - `scripts/setup-agent-machine.sh` — guided macOS workstation bootstrap
 - `scripts/sync-agent-helpers.sh` — install and check shared helper commands
+- `scripts/sync-agent-settings.mjs` — pin owned agent CLI settings (commit co-author trailers off)
