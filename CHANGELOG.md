@@ -2,6 +2,10 @@
 
 ## 2026-08-18
 
+- Fixed the MCP pin check, which stopped verifying `mcp-remote` when that pin
+  moved into the shared `scripts/lib/mcp-exec.sh`; it now reads both launcher
+  sources and additionally fails on any literal `exec_npm_bin` package without
+  an exact version.
 - Setup now pins the agent CLI settings this repo owns and checks them for
   drift: `includeCoAuthoredBy=false` in `~/.claude/settings.json`, so no machine
   lands commits co-authored by a model. Unmanaged keys are preserved
