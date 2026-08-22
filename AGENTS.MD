@@ -47,6 +47,12 @@ elsewhere; a duplicate drifts and then breaks silently.
 - External source intake: copy principles only after mapping to Edi-owned paths/tools. New tools, skills, or personal data-source stacks need Edi approval.
 - Secrets: `~/.profile` first. If still needed, one targeted `op` command inside tmux only.
 
+## Repository work claims
+- Before non-trivial repository work, run `mission-work check --intent <task> --summary <privacy-safe summary>` from the Git root. Add every known repository-relative `--path`; unknown write scope stays repository-wide.
+- Runtime-managed missions and execution sessions claim automatically. For direct terminal agents, launch through `mission-work run --intent <task> --summary <privacy-safe summary> -- <agent command...>` so the claim is acquired before the child starts, heartbeated, and released on exit.
+- Exit `3` means duplicate/conflicting work: do not edit. Inspect `mission-work list --state active`, wait with `mission-work wait`, or narrow to proven-disjoint paths.
+- Never put credentials, private data, or raw transcripts in `--summary`. Direct unwrapped agent launches are not coordinated preflight; use them only for bounded read-only inspection. Mission Runtime may still surface live bypasses as observed shadow claims.
+
 ## Screenshots (“use a screenshot”)
 - Capture with `shotport` first. Use `shotport window` for the frontmost app, or the matching `app`, `browser`, `desktop`, `ios`, or `android` target.
 - If capture is empty or fails, retry with the correct active app/session invocation before opening System Settings.
