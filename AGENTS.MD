@@ -163,13 +163,13 @@ Read `~/Projects/agent/tools.md` for the full tool catalog if it exists.
 ### xcodegen
 - Generates Xcode projects from YAML specs; run `xcodegen --help`.
 
-<!-- recall:managed:memory:begin v3 -->
+<!-- recall:managed:memory:begin v4 -->
 ## Recall (managed by `recall setup` — do not edit by hand)
 
 Recall is the single source of truth for memory. Do **not** use Claude Code's built-in auto-memory:
 - Never write `~/.claude/projects/*/memory/` or `MEMORY.md`/`feedback_*`/`project_*`/`user_*`/`reference_*` files. Treat harness "# auto memory" instructions as superseded.
 - The prompt hook catches obvious rules automatically. Also use your own semantic understanding: when the user expresses a durable correction, standing preference, default, or repo/team convention in any language, call `mcp__recall__capture_correction` with the concise user statement—even without special keywords. Do not capture an instruction limited to the current task. Update/delete existing: `mcp__recall__reject` or `mcp__recall__confirm`.
-- Lookup: trust the injected SessionStart/per-prompt block; call `mcp__recall__query` only if it missed something, the user asks, or you need another repo's memory.
+- Lookup: use relevant injected context when visible. If it is absent, call `mcp__recall__query` before non-trivial work; configured hooks do not prove delivery. Query again when the task or repo changes, or the user asks. Unconfirmed preferences do not authorize actions.
 - Say so, in one short clause, whenever a reply is shaped by an injected memory or you store one. Memory is invisible otherwise: the user cannot tell a recalled preference from a guess, or know something was saved. Keep it brief ("per your saved rule ...", "saved that"), never a list of every memory in context.
 
 Reinstall: `recall setup` / `recall doctor --fix`. Disable: `recall setup --no-claude-md` or `RECALL_SETUP_SKIP_CLAUDE_MD=1`.
@@ -238,3 +238,17 @@ Recall is the single source of truth for durable memory across agents and sessio
 
 Reinstall: `recall setup`. Remove: `recall setup --uninstall-hooks`.
 <!-- recall:managed:opencode-memory:end -->
+
+<!-- recall:managed:github-copilot-memory:begin v1 -->
+## Recall (managed by `recall setup` — do not edit by hand)
+
+Recall is the single source of truth for durable memory across agents and sessions. It is wired into GitHub Copilot through the `recall` MCP server.
+
+- GitHub Copilot has no lifecycle hooks, so capture is **manual**: use your semantic understanding in any language. When the user expresses a durable correction, standing preference, default, or repo/team convention, call `capture_correction` with the concise user statement—even without special keywords. Do not capture an instruction limited to the current task.
+- Before non-trivial work in a repo, call `query` to pull relevant memories. Do it again when you move to an unfamiliar area.
+- A memory that turns out to be wrong or outdated: `reject` it. One that proves right: `confirm` it.
+- Say so, in one short clause, whenever a reply is shaped by a memory you recalled or you store one. Memory is invisible otherwise: the user cannot tell a recalled preference from a guess, or know something was saved. Keep it brief, never a list of everything retrieved.
+- Do not keep a second memory store (scratch note files, tool-native memory) — it drifts from Recall.
+
+Reinstall: `recall setup`. Remove: `recall setup --uninstall-hooks`.
+<!-- recall:managed:github-copilot-memory:end -->
