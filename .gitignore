@@ -5,6 +5,8 @@
 !.env.example
 
 # Generated and local state
+__pycache__/
+*.py[cod]
 bin/docs-list
 node_modules/
 tmp/
