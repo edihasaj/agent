@@ -40,8 +40,11 @@ macOS and Linux entry points also install `abx` when needed and link
 - `skills/` — public, owned skills
 - `test/` — setup regression tests
 
-Private skills and MCP configuration may be loaded from `../manager/skills`
-and `../manager/configs/mcps.json`. Use `--public-only` to exclude them.
+Private skills, instruction overlays, and MCP configuration may be loaded
+from `../manager/skills`, `../manager/instructions`, and
+`../manager/configs/mcps.json`. Use `--public-only` to exclude them. Overlays
+are gated per machine by a `<!-- requires: <command> -->` first line; see
+`docs/agent-sync.md`.
 
 ## Checks
 

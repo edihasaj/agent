@@ -4,6 +4,7 @@ read_when:
   - Changing automatic agent or manager repository updates.
   - Installing or troubleshooting the agent-sync LaunchAgent.
   - Diagnosing stale skills, MCP policy, instructions, or runtime settings.
+  - Adding a private, machine-gated instruction overlay.
 ---
 
 # Agent Sync
@@ -48,6 +49,29 @@ tail -f ~/.local/state/agent-sync/launchd.log
 cat ~/.local/state/agent-sync/last-run.json
 launchctl print gui/$(id -u)/com.edihasaj.agent-sync
 ```
+
+## Private instruction overlays
+
+The user-level instruction files (`~/AGENTS.md`, `~/.claude/CLAUDE.md`,
+`~/.codex/AGENTS.md`, ...) are symlinks to the public `AGENTS.MD`. Rules that
+depend on private tooling do not belong in that public file. Put them in
+`manager/instructions/<name>.md` instead, and gate each file with a first line:
+
+```markdown
+<!-- requires: mission-work -->
+## Repository work claims
+- ...
+```
+
+`sync-agent-instructions.sh` appends an overlay only on machines where every
+listed command resolves with `command -v`. When at least one overlay applies,
+the destination becomes a generated regular file (marker line, canonical text,
+then each overlay under an `<!-- overlay: name.md -->` comment). When none
+apply, the symlink is restored. `--check` fails on a stale render; the
+post-merge hook and the scheduled sync re-render after either repository
+updates. `--public-only` skips overlays. Preserved pointer files are left alone.
+
+Verify on a machine: `grep -c '<!-- overlay:' ~/.claude/CLAUDE.md`.
 
 ## Adding an MCP later
 

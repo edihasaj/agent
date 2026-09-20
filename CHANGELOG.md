@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-20
+
+- Instruction sync now supports private, machine-gated overlays from
+  `../manager/instructions/*.md`. A `<!-- requires: <command> -->` first line
+  keeps an overlay off every machine where that command is not on `PATH`, so a
+  rule for a tool that exists on one Mac no longer blocks agents on the others.
+  The public `AGENTS.MD` stays free of private tooling.
+
 ## 2026-08-18
 
 - Fixed the MCP pin check, which stopped verifying `mcp-remote` when that pin

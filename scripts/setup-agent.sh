@@ -22,7 +22,7 @@ By default, only detected CLIs are configured. Re-running is safe.
 
 Options:
   --check          report drift without changing files
-  --public-only    skip private skills from the sibling manager repo
+  --public-only    skip private skills and instruction overlays from ../manager
   --headless       remove browser/GUI MCPs that need a local desktop
   --all-clis       configure every supported CLI, installed or not
   --cli NAME       configure one CLI explicitly; repeat for multiple CLIs
@@ -155,6 +155,7 @@ fi
 
 instruction_args=()
 [[ "$mode" == "check" ]] && instruction_args+=(--check)
+[[ "$include_private" -eq 0 ]] && instruction_args+=(--public-only)
 instruction_args+=(--cli home)
 for cli_name in "${selected_clis[@]}"; do
   instruction_args+=(--cli "$cli_name")
@@ -238,6 +239,7 @@ if [[ "$mode" == "sync" ]]; then
     "$repo_root/scripts/sync-agent-skills.sh" "${verify_skill_args[@]}"
   fi
   verify_instruction_args=(--check --cli home)
+  [[ "$include_private" -eq 0 ]] && verify_instruction_args+=(--public-only)
   for cli_name in "${selected_clis[@]}"; do
     verify_instruction_args+=(--cli "$cli_name")
   done
