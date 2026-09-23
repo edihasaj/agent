@@ -92,7 +92,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Release: read `docs/RELEASING.md` (or find best checklist if missing).
 
 ## Git
-- Safe by default: `git status/diff/log`. Push only when user asks.
+- Safe by default: `git status/diff/log`. A request to fix an issue in a deployed Edi-owned app authorizes commit, push, and its normal deployment workflow; do not ask for a second approval. For review-only or local-only requests, do not push.
 - `git checkout` ok for PR review / explicit request.
 - Branch changes require user consent.
 - Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
