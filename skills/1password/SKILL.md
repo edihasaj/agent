@@ -60,9 +60,17 @@ if ! tmux -S "$SOCKET" has-session -t "$SESSION" 2>/dev/null; then
   tmux -S "$SOCKET" new -d -s "$SESSION" -n shell
 fi
 
+# Never fall back to desktop-app auth here: without the token, `op` would wait
+# for an unlock prompt on the host's screen, which looks like a hang on a
+# headless machine. Fail fast instead.
+tmux -S "$SOCKET" send-keys -t "$SESSION" -- \
+  'export OP_BIOMETRIC_UNLOCK_ENABLED=false; [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ] || echo "token missing in pane"' Enter
 tmux -S "$SOCKET" send-keys -t "$SESSION" -- \
   'op whoami >/dev/null && echo "1Password service account ready"' Enter
 ```
+
+`~/.profile` is read by bash only. A zsh pane gets the token only by inheriting it from
+the tmux server, so start the server from a shell that already has it.
 
 Verify only the required item before use:
 
@@ -109,3 +117,7 @@ tmux -S "$SOCKET" kill-session -t "$SESSION"
 - If sign-in without app integration is needed, use `op account add`.
 - If a command returns "account is not signed in", re-run `op signin` inside tmux and authorize in the app.
 - Do not run `op` outside tmux; stop and ask if tmux is unavailable.
+- `op` taking minutes is not a reason for a 60-90 s watchdog: every killed call leaves an
+  `op daemon` behind and spends another service-account request. A service-account call
+  that stays slow with the network healthy is usually rate limiting; check it once with
+  `op service-account ratelimit` inside the same tmux session.
