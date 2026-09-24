@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# List a repository's docs with their read_when hints.
+#
+# Agents used to guess `pnpm docs:list` or `npm run docs:list` in every repo,
+# and most repos have no such script: 2,874 failed probes across the local
+# transcripts by September 2026. This picks the right source instead:
+#
+#   1. the repo's own `docs:list` package script, run with its package manager
+#   2. the repo's own bin/docs-list
+#   3. the shared lister in this repo, over ./docs
+#   4. otherwise it says there is no docs/ directory and exits 0
+set -euo pipefail
+
+agent_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$repo_root"
+
+package_manager() {
+  if [[ -f pnpm-lock.yaml ]]; then echo pnpm
+  elif [[ -f bun.lock || -f bun.lockb ]]; then echo bun
+  elif [[ -f yarn.lock ]]; then echo yarn
+  else echo npm
+  fi
+}
+
+if [[ -f package.json ]] && grep -q '"docs:list"[[:space:]]*:' package.json; then
+  pm="$(package_manager)"
+  case "$pm" in
+    npm) exec npm run --silent docs:list -- "$@" ;;
+    *) exec "$pm" run docs:list "$@" ;;
+  esac
+fi
+
+if [[ -x bin/docs-list && "$(readlink -f bin/docs-list)" != "$(readlink -f "${BASH_SOURCE[0]}")" ]]; then
+  exec bin/docs-list "$@"
+fi
+
+if [[ ! -d docs ]]; then
+  echo "docs-list: no docs/ directory in $repo_root; read README.md and AGENTS.md instead"
+  exit 0
+fi
+
+if command -v bun >/dev/null 2>&1; then
+  exec bun "$agent_root/scripts/docs-list.ts" "$repo_root/docs"
+fi
+
+# No bun: list markdown files and their read_when lines.
+find docs -name '*.md' -not -path '*/node_modules/*' | sort | while read -r file; do
+  hint="$(grep -m1 '^read_when:' "$file" 2>/dev/null | sed 's/^read_when:[[:space:]]*//')"
+  echo "${file#docs/} - ${hint:-[read_when missing]}"
+done

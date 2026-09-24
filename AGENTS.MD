@@ -43,8 +43,8 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Prose others read (PR descriptions/comments, review replies, Jira/GitHub/Slack/Discord, commit bodies, docs): load the repo's writing skill first and apply it. Telegraph is for Edi only. Required for work repos.
 
 ## Start
-- First in repo work: `git status --short --branch`, then docs list (`docs:list` or `bin/docs-list` if present).
-- Before code edits: read matching docs from `read_when`; if docs tooling is missing, say so and continue.
+- First in repo work: `git status --short --branch`, then `docs-list`. Never guess `pnpm docs:list`/`npm run docs:list`; most repos lack that script.
+- Before code edits: read matching docs from `read_when`; if `docs-list` reports no `docs/`, read README/AGENTS and continue.
 - External source intake: copy principles only after mapping to Edi-owned paths/tools. New tools, skills, or personal data-source stacks need Edi approval.
 - Secrets: `~/.profile` first. If still needed, one targeted `op` command inside tmux only.
 
@@ -67,7 +67,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - X/bird/birdclaw: do not import third-party `birdclaw`/`xurl` patterns; use our local `slash-x` path instead.
 
 ## Docs
-- Start coding: docs list first, open matching docs, follow links until domain makes sense.
+- Start coding: `docs-list` first, open matching docs, follow links until domain makes sense.
 - Agent tooling docs live in `docs/`.
 - Keep notes short; update docs when behavior/API changes. No behavior/API ship without docs unless explicitly waived.
 - Add `read_when` hints on cross-cutting docs.
@@ -108,7 +108,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Multi-agent: check `git status/diff` before edits; ship small commits.
 
 ## Language/Stack Notes
-- TypeScript: use repo PM; run `docs:list`; keep files small; follow existing patterns.
+- TypeScript: use repo PM; run `docs-list`; keep files small; follow existing patterns.
 - Python: use `uv` (`uv sync`, `uv run`, `uvx`); avoid bare `pip`/venv drift. DB schema changes: add Alembic migration + run `alembic upgrade head` locally. Imports: prefer explicit top-level package imports (absolute imports), avoid deep relative imports. Types: add type hints on new/changed code; run `pyright`/`mypy` when configured; avoid `Any` unless justified.
 - Swift: use workspace helper/daemon; validate `swift build` + tests; keep concurrency attrs right.
 
@@ -133,8 +133,8 @@ Read `~/Projects/agent/tools.md` for the full tool catalog if it exists.
 ### trash
 - Move files to Trash: `trash …` (system command).
 
-### bin/docs-list / scripts/docs-list.ts
-- Optional. Lists `docs/` + enforces front-matter. Ignore if `bin/docs-list` not installed. Rebuild: `bun build scripts/docs-list.ts --compile --outfile bin/docs-list`.
+### docs-list
+- On PATH via `~/.local/bin` (linked by `scripts/sync-agent-helpers.sh`). Works in any repo: runs the repo's own `docs:list` script with its package manager if present, else the repo's `bin/docs-list`, else lists `docs/` with `read_when` hints, else says there is no `docs/` and exits 0.
 
 ### Browser
 - **Always use `abx` first for browser navigation, inspection, interaction, scraping, and local web testing, even when Browser/Chrome tools or skills are available.** Do not use the in-app Browser, Chrome connector, `chrome-devtools` MCP, or Playwright unless the user explicitly requests that browser/session, `abx` is unavailable, or `abx` lacks the required capability. If `abx` fails, quote the exact error and retry once with the correct mode before falling back.

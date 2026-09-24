@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-09-24
+
+- Add `docs-list`, linked into `~/.local/bin` with `committer`. It runs the
+  repo's own `docs:list` script with the right package manager, else the
+  repo's `bin/docs-list`, else lists `docs/` with `read_when` hints, else says
+  there is no `docs/`. AGENTS.md now points at it. Agents had run 2,874 guessed
+  `pnpm docs:list` or `npm run docs:list` commands, and only 20 of 155 local
+  repos define that script.
+
 ## 2026-09-20
 
 - Instruction sync now supports private, machine-gated overlays from

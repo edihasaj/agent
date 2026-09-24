@@ -12,25 +12,33 @@ if [[ $# -gt 0 ]]; then
 fi
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source_path="$repo_root/bin/committer"
 target_dir="$HOME/.local/bin"
-target_path="$target_dir/committer"
+status=0
 
-if [[ -L "$target_path" && "$(readlink "$target_path")" == "$source_path" ]]; then
-  echo "committer: current"
-  exit 0
-fi
+for helper in committer docs-list; do
+  source_path="$repo_root/bin/$helper"
+  target_path="$target_dir/$helper"
 
-if [[ "$mode" == "check" ]]; then
-  echo "error: committer is not linked to $source_path" >&2
-  exit 1
-fi
+  if [[ -L "$target_path" && "$(readlink "$target_path")" == "$source_path" ]]; then
+    echo "$helper: current"
+    continue
+  fi
 
-if [[ -e "$target_path" && ! -L "$target_path" ]]; then
-  echo "error: preserving user-owned file at $target_path; move it and rerun setup" >&2
-  exit 1
-fi
+  if [[ "$mode" == "check" ]]; then
+    echo "error: $helper is not linked to $source_path" >&2
+    status=1
+    continue
+  fi
 
-mkdir -p "$target_dir"
-ln -sfn "$source_path" "$target_path"
-echo "committer: linked $target_path -> $source_path"
+  if [[ -e "$target_path" && ! -L "$target_path" ]]; then
+    echo "error: preserving user-owned file at $target_path; move it and rerun setup" >&2
+    status=1
+    continue
+  fi
+
+  mkdir -p "$target_dir"
+  ln -sfn "$source_path" "$target_path"
+  echo "$helper: linked $target_path -> $source_path"
+done
+
+exit "$status"
