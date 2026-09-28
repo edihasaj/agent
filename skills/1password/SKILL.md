@@ -1,10 +1,29 @@
 ---
 name: 1password
-description: Set up and use 1Password CLI (op). Use when installing the CLI, choosing desktop or lock-independent service-account authentication, enabling desktop app integration, signing in, maintaining a persistent tmux session, or reading/injecting/running targeted secrets via op.
+description: Use 1Password with agents. Prefer 1Password Environments via the 1password-mcp server for interactive secrets; use the CLI (op) when installing the CLI, choosing desktop or lock-independent service-account authentication, enabling desktop app integration, signing in, maintaining a persistent tmux session, or reading/injecting/running targeted secrets via op.
 metadata: {"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","kind":"brew","formula":"1password-cli","bins":["op"],"label":"Install 1Password CLI (brew)"}]}
 ---
 
-# 1Password CLI
+# 1Password
+
+## Preferred: Environments over MCP (interactive)
+
+Secret values never enter agent context. Needs the desktop app running and unlocked; for
+unattended jobs or plain vault items, use the CLI workflow below.
+
+1. One-time app setup: Settings → Labs → enable the local MCP server; Settings → Developer →
+   Integrate with MCP clients.
+2. Server: `1password-mcp` (stdio; ships in the app, linked at `/usr/local/bin/1password-mcp`).
+   Register it as an MCP server in the agent runtime.
+3. Flow: `authenticate` → `list_environments` / `list_variables` (names only) →
+   `create_local_env_file` mounts a `.env` as a 0600 named pipe served on read (nothing on disk).
+4. Consume by reading the mount inside a command (`set -a; . <mount>; set +a; tool`, or pipe one
+   value to stdin). Never print values.
+5. `append_variables` requires `concealed` (true for secrets). Secret values are entered by the
+   owner in the app or piped by a command, never passed through the agent. Environments are
+   deleted in the app (no MCP tool).
+
+## CLI (unattended or vault items)
 
 Follow the official CLI get-started steps. Don't guess install commands.
 
