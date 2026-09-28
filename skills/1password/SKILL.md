@@ -11,10 +11,11 @@ metadata: {"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","ki
 Secret values never enter agent context. Needs the desktop app running and unlocked; for
 unattended jobs or plain vault items, use the CLI workflow below.
 
-1. One-time app setup: Settings → Labs → enable the local MCP server; Settings → Developer →
-   Integrate with MCP clients.
-2. Server: `1password-mcp` (stdio; ships in the app, linked at `/usr/local/bin/1password-mcp`).
-   Register it as an MCP server in the agent runtime.
+1. One-time app setup: Settings → Developer → Integrate with MCP clients (1Password 8.12+;
+   no Labs toggle needed).
+2. Server: `1password-mcp` (stdio; macOS path
+   `/Applications/1Password.app/Contents/MacOS/1password-mcp`, sometimes also linked in
+   `/usr/local/bin`). Register it as an MCP server in the agent runtime.
 3. Flow: `authenticate` → `list_environments` / `list_variables` (names only) →
    `create_local_env_file` mounts a `.env` as a 0600 named pipe served on read (nothing on disk).
 4. Consume by reading the mount inside a command (`set -a; . <mount>; set +a; tool`, or pipe one
