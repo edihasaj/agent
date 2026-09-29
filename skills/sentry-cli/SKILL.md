@@ -22,6 +22,20 @@ selects the wrong target.
 - Verify the resolved organization/project before mutations.
 - Never print, log, or persist authentication tokens.
 
+## Accounts
+
+Each Sentry account has its own login in `~/.sentry-<name>` (for example
+`scriptix`, `eunifyer`), like the per-account Azure config dirs. The default
+`~/.sentry` stays logged out, so pick the account explicitly:
+
+```bash
+SENTRY_CONFIG_DIR=~/.sentry-<name> sentry issue list <org>/<project>
+```
+
+In an interactive shell, `sentryp <name>` (or `sentry-<name>`) from
+`~/.profile` sets `SENTRY_CONFIG_DIR` for that shell. A missing account needs
+`SENTRY_CONFIG_DIR=~/.sentry-<name> sentry auth login`, run by Edi.
+
 Exit-code routing:
 
 | Range | Meaning | Response |
