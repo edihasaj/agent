@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-30
+
+- Link Copilot's global instructions to `~/.copilot/copilot-instructions.md`
+  (or `$COPILOT_HOME`). The sync wrote `~/.github/copilot-instructions.md`,
+  which Copilot only reads inside a repository, so Copilot CLI and the VS Code
+  agent host never saw `AGENTS.MD`. A regression test covers both paths.
+
 ## 2026-09-24
 
 - Add `docs-list`, linked into `~/.local/bin` with `committer`. It runs the

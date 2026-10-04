@@ -111,3 +111,52 @@ test("a preserved pointer file is left alone even when overlays apply", (context
   assert.match(sync.stdout, /rendered=1 preserved=1/);
   assert.match(readFileSync(f.codex, "utf8"), /local notes/);
 });
+
+test("copilot links into ~/.copilot, or $COPILOT_HOME, never ~/.github", (context) => {
+  const f = fixture(context);
+  const runCopilot = (extraEnv = {}) =>
+    spawnSync("/bin/bash", [script, "--cli", "copilot"], {
+      encoding: "utf8",
+      env: {
+        HOME: f.home,
+        PATH: [f.bin, "/usr/bin", "/bin"].join(delimiter),
+        AGENT_INSTRUCTIONS_SOURCE: f.canonical,
+        AGENT_INSTRUCTIONS_OVERLAYS: f.overlays,
+        ...extraEnv,
+      },
+    });
+
+  const sync = runCopilot();
+  assert.equal(sync.status, 0, sync.stderr);
+  const target = join(f.home, ".copilot", "copilot-instructions.md");
+  assert.ok(lstatSync(target).isSymbolicLink());
+  assert.equal(readFileSync(target, "utf8"), readFileSync(f.canonical, "utf8"));
+  assert.throws(() => lstatSync(join(f.home, ".github", "copilot-instructions.md")));
+
+  const copilotHome = join(f.home, "custom-copilot");
+  assert.equal(runCopilot({ COPILOT_HOME: copilotHome }).status, 0);
+  assert.ok(lstatSync(join(copilotHome, "copilot-instructions.md")).isSymbolicLink());
+});
+
+test("auto-detect links copilot only when copilot is on PATH", (context) => {
+  const detect = (f) =>
+    spawnSync("/bin/bash", [script], {
+      encoding: "utf8",
+      env: {
+        HOME: f.home,
+        PATH: [f.bin, "/usr/bin", "/bin"].join(delimiter),
+        AGENT_INSTRUCTIONS_SOURCE: f.canonical,
+        AGENT_INSTRUCTIONS_OVERLAYS: f.overlays,
+      },
+    });
+
+  const without = fixture(context);
+  assert.equal(detect(without).status, 0);
+  assert.throws(() => lstatSync(join(without.home, ".copilot", "copilot-instructions.md")));
+
+  const withCopilot = fixture(context, { tool: "copilot" });
+  const sync = detect(withCopilot);
+  assert.equal(sync.status, 0, sync.stderr);
+  assert.match(sync.stdout, /clis=home,copilot/);
+  assert.ok(lstatSync(join(withCopilot.home, ".copilot", "copilot-instructions.md")).isSymbolicLink());
+});
