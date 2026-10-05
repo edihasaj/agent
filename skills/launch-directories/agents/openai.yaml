@@ -1,0 +1,4 @@
+interface:
+  display_name: "Launch Directories"
+  short_description: "Fill and submit launch-site listings from Compass"
+  default_prompt: "Use $launch-directories for Compass launch <id> with COMPASS_URL set."

@@ -2,6 +2,13 @@
 
 ## 2026-10-05
 
+- Add the `launch-directories` skill. A Compass launch agent claims one
+  launch, fills that site's form in the agent Chrome with the owner's approved
+  copy and images, uploads a full-page screenshot, and stops. It presses the
+  final submit only in a run that Compass started after the owner chose Submit
+  now. Sign-in walls, CAPTCHAs, payment, and missing answers go back to Compass
+  as questions. Each report carries the Chrome tab id, so the next run continues
+  in the same form. Needs abx 0.1.13 or later for live tab ids and form uploads.
 - Retire the scheduled agent-sync job (LaunchAgent `com.edihasaj.agent-sync`,
   every 30 minutes). `git pull` in `agent` or `manager` still reconciles
   through the managed hooks, and `bin/agent-sync` runs on demand. Setup now
