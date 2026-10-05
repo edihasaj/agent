@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Managed by scripts/sync-agent-maintenance.mjs. Always preserve git's result.
 # Manual pulls reconcile the checked-out instructions, skills, MCP policy, and
-# runtime settings immediately; scheduled pulls use the same agent-sync path.
+# runtime settings immediately through the same agent-sync path.
 set +e
 
 [[ "${AGENT_DOCTOR_SKIP_HOOK:-0}" == "1" ]] && exit 0

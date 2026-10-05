@@ -2,11 +2,11 @@
 
 ## 2026-10-05
 
-- Add `bin/agent-sync-disable` to turn the automatic agent-sync job off on one
-  Mac (or back on with `--enable`). Setup respects the
-  `~/.config/agent/agent-sync.disabled` marker and removes the LaunchAgent
-  instead of reinstalling it, and `agent doctor` reports the job as disabled
-  rather than stale. A regression test covers the removal.
+- Retire the scheduled agent-sync job (LaunchAgent `com.edihasaj.agent-sync`,
+  every 30 minutes). `git pull` in `agent` or `manager` still reconciles
+  through the managed hooks, and `bin/agent-sync` runs on demand. Setup now
+  removes the LaunchAgent from any Mac that has it, and `agent doctor` no
+  longer checks sync freshness. A regression test covers the removal.
 
 ## 2026-09-30
 

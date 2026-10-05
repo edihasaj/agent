@@ -189,9 +189,8 @@ obsidian vaults
 ```
 
 The platform setup records its public/private, headless, and CLI-selection
-policy in `~/.config/agent/setup.json`. On macOS it also installs
-`com.edihasaj.agent-sync`, which safely fast-forwards clean `agent` and `manager`
-checkouts every 30 minutes and reconciles all runtimes. Managed Git hooks run
-the same reconciliation immediately after manual pulls or rebases. Dirty,
-non-default, ahead, or diverged repositories are never modified; the blocker is
-recorded for `agent doctor`. See `docs/agent-sync.md`.
+policy in `~/.config/agent/setup.json`. Managed Git hooks reconcile all
+runtimes immediately after a pull or rebase of `agent` or `manager`;
+`bin/agent-sync` does the same on demand, fast-forwarding only clean default
+branches. There is no scheduled job (retired 2026-10-05). See
+`docs/agent-sync.md`.

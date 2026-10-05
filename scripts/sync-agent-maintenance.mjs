@@ -120,112 +120,26 @@ function syncHook(repoRoot, hookName, source, options, platform) {
   return { status: "changed", detail: path };
 }
 
-function xml(value) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
-export function launchAgentContents(repoRoot, managerRoot, userHome) {
-  const label = "com.edihasaj.agent-sync";
-  const logPath = join(userHome, ".local", "state", "agent-sync", "launchd.log");
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key>
-  <string>${label}</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>${xml(resolve(repoRoot, "bin", "agent-sync"))}</string>
-    <string>--quiet</string>
-  </array>
-  <key>EnvironmentVariables</key>
-  <dict>
-    <key>AGENT_REPO_ROOT</key>
-    <string>${xml(repoRoot)}</string>
-    <key>MANAGER_REPO_ROOT</key>
-    <string>${xml(managerRoot)}</string>
-    <key>PATH</key>
-    <string>${xml(`${join(userHome, ".local", "bin")}:${join(userHome, ".npm-global", "bin")}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin`)}</string>
-  </dict>
-  <key>RunAtLoad</key>
-  <true/>
-  <key>StartInterval</key>
-  <integer>1800</integer>
-  <key>ThrottleInterval</key>
-  <integer>300</integer>
-  <key>ProcessType</key>
-  <string>Background</string>
-  <key>LowPriorityIO</key>
-  <true/>
-  <key>Nice</key>
-  <integer>5</integer>
-  <key>StandardOutPath</key>
-  <string>${xml(logPath)}</string>
-  <key>StandardErrorPath</key>
-  <string>${xml(logPath)}</string>
-</dict>
-</plist>
-`;
-}
-
-// A Mac opts out of the automatic sync job with this marker
-// (bin/agent-sync-disable). Setup then removes the job instead of installing it.
-export function agentSyncDisabledPath(userHome) {
-  return join(userHome, ".config", "agent", "agent-sync.disabled");
-}
-
-function launchAgentLoaded(label) {
-  const uid = typeof process.getuid === "function" ? process.getuid() : null;
-  if (uid == null) return false;
-  return spawnSync("launchctl", ["print", `gui/${uid}/${label}`], { encoding: "utf8" }).status === 0;
-}
-
-function syncLaunchAgent(repoRoot, managerRoot, userHome, options, platform, environment) {
-  if (platform !== "darwin") return { status: "skip", detail: "automatic sync LaunchAgent is macOS-only" };
+// The scheduled agent-sync job (LaunchAgent com.edihasaj.agent-sync, every 30
+// minutes) was retired on 2026-10-05. `git pull` in either repository still
+// reconciles through the post-merge/post-rewrite hooks, and bin/agent-sync runs
+// on demand. Setup removes any copy still installed on a Mac.
+function removeRetiredLaunchAgent(userHome, options, platform, environment) {
+  if (platform !== "darwin") return { status: "skip", detail: "no scheduled agent-sync job outside macOS" };
   const label = "com.edihasaj.agent-sync";
   const path = join(userHome, "Library", "LaunchAgents", `${label}.plist`);
-  if (existsSync(agentSyncDisabledPath(userHome))) {
-    const present = existsSync(path);
-    if (options.check) {
-      return present
-        ? { status: "fail", detail: `automatic sync is disabled but ${path} is still installed` }
-        : { status: "match", detail: "automatic sync disabled on this Mac" };
-    }
-    if (environment.AGENT_SETUP_NO_LAUNCHCTL !== "1") {
-      spawnSync("launchctl", ["bootout", `gui/${process.getuid()}/${label}`], { encoding: "utf8" });
-    }
-    if (!present) return { status: "match", detail: "automatic sync disabled on this Mac" };
-    rmSync(path, { force: true });
-    return { status: "changed", detail: `removed ${path} (automatic sync disabled on this Mac)` };
-  }
-  const expected = launchAgentContents(repoRoot, managerRoot, userHome);
-  const matches = existsSync(path) && readFileSync(path, "utf8") === expected;
-  const loaded = environment.AGENT_SETUP_NO_LAUNCHCTL === "1" ? true : launchAgentLoaded(label);
-  if (matches && loaded) return { status: "match", detail: path };
+  const present = existsSync(path);
   if (options.check) {
-    return { status: "fail", detail: !matches ? `missing or stale LaunchAgent: ${path}` : `LaunchAgent not loaded: ${label}` };
+    return present
+      ? { status: "fail", detail: `retired LaunchAgent still installed: ${path} (rerun setup to remove it)` }
+      : { status: "match", detail: "no scheduled agent-sync job" };
   }
-  mkdirSync(dirname(path), { recursive: true });
-  mkdirSync(join(userHome, ".local", "state", "agent-sync"), { recursive: true });
-  if (!matches) {
-    const temporary = `${path}.tmp`;
-    writeFileSync(temporary, expected, { mode: 0o644 });
-    renameSync(temporary, path);
+  if (environment.AGENT_SETUP_NO_LAUNCHCTL !== "1" && typeof process.getuid === "function") {
+    spawnSync("launchctl", ["bootout", `gui/${process.getuid()}/${label}`], { encoding: "utf8" });
   }
-  if (environment.AGENT_SETUP_NO_LAUNCHCTL !== "1") {
-    const uid = process.getuid();
-    spawnSync("launchctl", ["bootout", `gui/${uid}`, path], { encoding: "utf8" });
-    const bootstrap = spawnSync("launchctl", ["bootstrap", `gui/${uid}`, path], { encoding: "utf8" });
-    if (bootstrap.status !== 0) {
-      const detail = (bootstrap.stderr || bootstrap.stdout || "launchctl bootstrap failed").trim();
-      return { status: "fail", detail: `${label}: ${detail}` };
-    }
-  }
-  return { status: "changed", detail: path };
+  if (!present) return { status: "match", detail: "no scheduled agent-sync job" };
+  rmSync(path, { force: true });
+  return { status: "changed", detail: `removed retired LaunchAgent ${path}` };
 }
 
 export function runMaintenance(argv = process.argv.slice(2), environment = process.env) {
@@ -270,7 +184,7 @@ export function runMaintenance(argv = process.argv.slice(2), environment = proce
     }
   }
 
-  results.push(syncLaunchAgent(repoRoot, managerRoot, userHome, options, platform, environment));
+  results.push(removeRetiredLaunchAgent(userHome, options, platform, environment));
 
   const failures = results.filter((result) => result.status === "fail");
   for (const result of results) {

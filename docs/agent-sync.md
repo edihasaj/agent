@@ -1,8 +1,8 @@
 ---
-summary: "Safe automatic updates and cross-runtime reconciliation for shared agent configuration."
+summary: "Pull-triggered and on-demand reconciliation of shared agent configuration across runtimes."
 read_when:
   - Changing automatic agent or manager repository updates.
-  - Installing or troubleshooting the agent-sync LaunchAgent.
+  - Troubleshooting why a pull did not update skills, instructions, or MCPs.
   - Diagnosing stale skills, MCP policy, instructions, or runtime settings.
   - Adding a private, machine-gated instruction overlay.
 ---
@@ -14,54 +14,36 @@ versioned configuration source without symlinking incompatible runtime configs.
 
 ## Behavior
 
-On macOS, setup installs `~/Library/LaunchAgents/com.edihasaj.agent-sync.plist`.
-It runs at login and every 30 minutes:
+There is no background job. Configuration changes reach a Mac when you pull:
 
-1. Acquire a single-machine lock.
-2. Fetch both repositories.
-3. Preflight both before changing either one.
-4. Fast-forward only clean default branches with no local commits.
-5. Re-run the machine's stored setup policy.
-6. Verify instructions, skills, MCPs, settings, hooks, and doctor.
-7. Record a credential-free result in
-   `~/.local/state/agent-sync/last-run.json`.
+- `git pull` (or a rebase) in `~/Projects/agent` or `~/Projects/manager` runs
+  the managed `post-merge`/`post-rewrite` hook, which reconciles the checked-out
+  instructions, skills, MCP policy and runtime settings at once. Hooks
+  preserve Git's exit status.
+- `bin/agent-sync` does the pull and the reconcile together:
+  1. Acquire a single-machine lock.
+  2. Fetch both repositories.
+  3. Preflight both before changing either one.
+  4. Fast-forward only clean default branches with no local commits.
+  5. Re-run the machine's stored setup policy.
+  6. Verify instructions, skills, MCPs, settings, hooks, and doctor.
+  7. Record a credential-free result in
+     `~/.local/state/agent-sync/last-run.json`.
 
-If either repository is dirty, on another branch, ahead, or diverged, neither
-repository is merged. The LaunchAgent retries later. `agent doctor` reports the
-blocker and stale runs older than two hours.
+  If either repository is dirty, on another branch, ahead, or diverged,
+  neither is merged and the blocker is printed.
 
-Manual pulls use the managed `post-merge`/`post-rewrite` hook to reconcile the
-already checked-out versions immediately. Hooks preserve Git's exit status.
-
-## Turn it off on one Mac
-
-```bash
-~/Projects/agent/bin/agent-sync-disable            # stop it and remove it from login
-~/Projects/agent/bin/agent-sync-disable --status
-~/Projects/agent/bin/agent-sync-disable --enable   # reinstall and start it again
-```
-
-Off writes `~/.config/agent/agent-sync.disabled`. While it exists, setup
-removes the LaunchAgent instead of installing it, so neither `setup-macos.sh`
-nor a manual sync brings the job back, and `agent doctor` reports
-`automatic-sync: disabled on this Mac` instead of a stale-sync failure. Pull and
-reconcile by hand with `bin/agent-sync`.
+The scheduled LaunchAgent `com.edihasaj.agent-sync` (every 30 minutes) was
+retired on 2026-10-05. Setup removes it from any Mac that still has it.
 
 ## Commands
 
 ```bash
-~/Projects/agent/bin/agent-sync
-~/Projects/agent/bin/agent-sync --reconcile-only
-~/Projects/agent/bin/agent-sync --check
+~/Projects/agent/bin/agent-sync                    # pull both repos and reconcile
+~/Projects/agent/bin/agent-sync --reconcile-only   # reconcile what is checked out
+~/Projects/agent/bin/agent-sync --check            # report the last run
 ~/Projects/agent/bin/agent doctor
-```
-
-Logs:
-
-```bash
-tail -f ~/.local/state/agent-sync/launchd.log
 cat ~/.local/state/agent-sync/last-run.json
-launchctl print gui/$(id -u)/com.edihasaj.agent-sync
 ```
 
 ## Private instruction overlays
