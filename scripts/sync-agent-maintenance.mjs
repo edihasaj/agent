@@ -9,6 +9,7 @@ import {
   readFileSync,
   readlinkSync,
   renameSync,
+  rmSync,
   symlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -171,6 +172,12 @@ export function launchAgentContents(repoRoot, managerRoot, userHome) {
 `;
 }
 
+// A Mac opts out of the automatic sync job with this marker
+// (bin/agent-sync-disable). Setup then removes the job instead of installing it.
+export function agentSyncDisabledPath(userHome) {
+  return join(userHome, ".config", "agent", "agent-sync.disabled");
+}
+
 function launchAgentLoaded(label) {
   const uid = typeof process.getuid === "function" ? process.getuid() : null;
   if (uid == null) return false;
@@ -181,6 +188,20 @@ function syncLaunchAgent(repoRoot, managerRoot, userHome, options, platform, env
   if (platform !== "darwin") return { status: "skip", detail: "automatic sync LaunchAgent is macOS-only" };
   const label = "com.edihasaj.agent-sync";
   const path = join(userHome, "Library", "LaunchAgents", `${label}.plist`);
+  if (existsSync(agentSyncDisabledPath(userHome))) {
+    const present = existsSync(path);
+    if (options.check) {
+      return present
+        ? { status: "fail", detail: `automatic sync is disabled but ${path} is still installed` }
+        : { status: "match", detail: "automatic sync disabled on this Mac" };
+    }
+    if (environment.AGENT_SETUP_NO_LAUNCHCTL !== "1") {
+      spawnSync("launchctl", ["bootout", `gui/${process.getuid()}/${label}`], { encoding: "utf8" });
+    }
+    if (!present) return { status: "match", detail: "automatic sync disabled on this Mac" };
+    rmSync(path, { force: true });
+    return { status: "changed", detail: `removed ${path} (automatic sync disabled on this Mac)` };
+  }
   const expected = launchAgentContents(repoRoot, managerRoot, userHome);
   const matches = existsSync(path) && readFileSync(path, "utf8") === expected;
   const loaded = environment.AGENT_SETUP_NO_LAUNCHCTL === "1" ? true : launchAgentLoaded(label);

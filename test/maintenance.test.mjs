@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -79,4 +79,20 @@ test("maintenance sync installs hooks for agent and manager and detects drift", 
   const drift = spawnSync(process.execPath, [maintenanceScript, "--check"], { encoding: "utf8", env });
   assert.equal(drift.status, 1);
   assert.match(drift.stderr, /stale setup state/);
+});
+
+test("a disabled Mac gets no automatic sync LaunchAgent, and an existing one is removed", () => {
+  const home = mkdtempSync(join(tmpdir(), "agent-sync-disabled-"));
+  const plist = join(home, "Library", "LaunchAgents", "com.edihasaj.agent-sync.plist");
+  mkdirSync(join(home, ".config", "agent"), { recursive: true });
+  writeFileSync(join(home, ".config", "agent", "agent-sync.disabled"), "test\n");
+  mkdirSync(join(home, "Library", "LaunchAgents"), { recursive: true });
+  writeFileSync(plist, "stale\n");
+  const env = { ...process.env, AGENT_SETUP_HOME: home, AGENT_SETUP_PLATFORM: "darwin", AGENT_SETUP_NO_LAUNCHCTL: "1" };
+  const result = spawnSync(process.execPath, [maintenanceScript], { encoding: "utf8", env });
+  assert.match(result.stdout, /removed .*com\.edihasaj\.agent-sync\.plist \(automatic sync disabled on this Mac\)/);
+  assert.equal(existsSync(plist), false);
+  const check = spawnSync(process.execPath, [maintenanceScript, "--check"], { encoding: "utf8", env });
+  assert.doesNotMatch(check.stderr, /agent-sync/);
+  rmSync(home, { recursive: true, force: true });
 });

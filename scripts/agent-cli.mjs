@@ -170,7 +170,10 @@ export function runDoctor(environment = process.env) {
 
   if (platform === "darwin" && environment.AGENT_SYNC_ACTIVE !== "1") {
     const syncStatePath = resolve(environment.AGENT_SYNC_STATE || join(userHome, ".local", "state", "agent-sync", "last-run.json"));
-    checks.push({ name: "automatic-sync", ...syncStateCheck(readJsonIfPresent(syncStatePath)) });
+    const disabledMarker = join(userHome, ".config", "agent", "agent-sync.disabled");
+    checks.push(existsSync(disabledMarker)
+      ? { name: "automatic-sync", status: "pass", detail: `disabled on this Mac (${disabledMarker})` }
+      : { name: "automatic-sync", ...syncStateCheck(readJsonIfPresent(syncStatePath)) });
   }
 
   const privatePath = resolve(managerRoot, "configs", "mcps.json");

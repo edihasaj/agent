@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Turn the agent-sync background job (com.edihasaj.agent-sync) off on this Mac,
+# or back on. Off writes ~/.config/agent/agent-sync.disabled, which setup
+# respects, so neither setup-macos.sh nor a later sync reinstalls the job.
+# Updates then happen only when you run bin/agent-sync yourself.
+#
+#   agent-sync-disable            turn it off
+#   agent-sync-disable --enable   turn it back on (reinstalls and starts the job)
+#   agent-sync-disable --status   show whether it is on
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+label=com.edihasaj.agent-sync
+marker="$HOME/.config/agent/agent-sync.disabled"
+plist="$HOME/Library/LaunchAgents/$label.plist"
+
+status() {
+  local loaded=no
+  launchctl print "gui/$(id -u)/$label" >/dev/null 2>&1 && loaded=yes
+  if [[ -e "$marker" ]]; then echo "agent-sync: disabled on this Mac (job loaded: $loaded)"
+  else echo "agent-sync: enabled (job loaded: $loaded)"; fi
+}
+
+case "${1:-}" in
+  ""|--disable)
+    mkdir -p "$(dirname "$marker")"
+    date -u +%Y-%m-%dT%H:%M:%SZ >"$marker"
+    launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+    rm -f "$plist"
+    status
+    echo "Update by hand with: $root/bin/agent-sync"
+    ;;
+  --enable)
+    rm -f "$marker"
+    "$root/bin/agent-sync" --reconcile-only
+    status
+    ;;
+  --status) status ;;
+  -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "usage: $(basename "$0") [--enable|--status]" >&2; exit 2 ;;
+esac

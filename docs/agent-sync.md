@@ -33,6 +33,20 @@ blocker and stale runs older than two hours.
 Manual pulls use the managed `post-merge`/`post-rewrite` hook to reconcile the
 already checked-out versions immediately. Hooks preserve Git's exit status.
 
+## Turn it off on one Mac
+
+```bash
+~/Projects/agent/bin/agent-sync-disable            # stop it and remove it from login
+~/Projects/agent/bin/agent-sync-disable --status
+~/Projects/agent/bin/agent-sync-disable --enable   # reinstall and start it again
+```
+
+Off writes `~/.config/agent/agent-sync.disabled`. While it exists, setup
+removes the LaunchAgent instead of installing it, so neither `setup-macos.sh`
+nor a manual sync brings the job back, and `agent doctor` reports
+`automatic-sync: disabled on this Mac` instead of a stale-sync failure. Pull and
+reconcile by hand with `bin/agent-sync`.
+
 ## Commands
 
 ```bash

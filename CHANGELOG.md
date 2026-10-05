@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-05
+
+- Add `bin/agent-sync-disable` to turn the automatic agent-sync job off on one
+  Mac (or back on with `--enable`). Setup respects the
+  `~/.config/agent/agent-sync.disabled` marker and removes the LaunchAgent
+  instead of reinstalling it, and `agent doctor` reports the job as disabled
+  rather than stale. A regression test covers the removal.
+
 ## 2026-09-30
 
 - Link Copilot's global instructions to `~/.copilot/copilot-instructions.md`
