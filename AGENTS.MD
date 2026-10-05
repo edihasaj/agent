@@ -52,7 +52,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Capture with `shotport` first. Use `shotport window` for the frontmost app, or the matching `app`, `browser`, `desktop`, `ios`, or `android` target.
 - If capture is empty or fails, retry with the correct active app/session invocation before opening System Settings.
 - For an existing saved screenshot, pick the newest PNG in `~/Desktop` or `~/Downloads`; verify the UI, not the filename.
-- For asset replacement, inspect size with `sips -g pixelWidth -g pixelHeight <file>` (prefer 2×), optimize with `imageoptim <file>`, preserve dimensions, then run the gate and verify CI.
+- For asset replacement, inspect size with `sips -g pixelWidth -g pixelHeight <file>` (prefer 2×), preserve dimensions, then run the gate and verify CI.
 
 ## Important Locations
 - Blog repo: `~/Projects/edihasaj.com`

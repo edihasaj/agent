@@ -10,8 +10,8 @@ invocation before opening System Settings.
 
 For an existing screenshot, inspect the newest PNG in `~/Desktop` or
 `~/Downloads`; verify the UI rather than trusting its filename. For asset
-replacement, inspect dimensions with `sips`, prefer 2x, optimize with
-`imageoptim`, preserve dimensions, then run the gate and verify CI.
+replacement, inspect dimensions with `sips`, prefer 2x, preserve dimensions,
+then run the gate and verify CI.
 
 ## Interact
 
