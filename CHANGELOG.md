@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-06
+
+- Add the `store-console` skill for the Google Play Console and App Store
+  Connect steps that the official APIs cannot do: creating the app record on
+  either store, Play's App content declarations, accessibility and
+  foreground-service declarations, store category, country availability and
+  "Send changes for review", App Store "Data Not Collected" privacy answers,
+  and Apple App Group registration and assignment. It drives the signed-in
+  agent Chrome with Playwright over CDP. Every command has a `--dry-run` that
+  fills the form and saves nothing; all of them were dry-run against the live
+  Chirp Go listings. The skill's table says which steps belong to the APIs.
+
 ## 2026-10-05
 
 - Add the `launch-directories` skill. A Compass launch agent claims one

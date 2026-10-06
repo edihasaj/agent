@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# store-console play|asc <command> [args]  — see ../SKILL.md
+set -euo pipefail
+here="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+case "${1:-}" in
+  play) shift; script=play_console.py ;;
+  asc) shift; script=asc_web.py ;;
+  *) echo "usage: store-console play|asc <command> [--help]" >&2; exit 2 ;;
+esac
+cd "$here"
+exec uv run --quiet --with playwright python3 "$script" "$@"

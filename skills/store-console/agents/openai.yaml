@@ -1,0 +1,4 @@
+interface:
+  display_name: "Store Console"
+  short_description: "Play Console and App Store Connect steps the APIs cannot do"
+  default_prompt: "Use $store-console to finish the store-console steps for <app>, dry run first."
