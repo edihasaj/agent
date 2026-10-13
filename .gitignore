@@ -13,6 +13,7 @@ tmp/
 .pytest_cache/
 .ruff_cache/
 .recall/
+.state/archives/
 
 # Editor state
 .idea/

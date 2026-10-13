@@ -40,6 +40,10 @@ macOS and Linux entry points also install `abx` when needed and link
 - `skills/` — public, owned skills
 - `test/` — setup regression tests
 
+Local Git backup bundles belong in `.state/archives/`. Git ignores this
+directory so preserved development work stays out of the public repository
+and does not block synchronization.
+
 Private skills, instruction overlays, and MCP configuration may be loaded
 from `../manager/skills`, `../manager/instructions`, and
 `../manager/configs/mcps.json`. Use `--public-only` to exclude them. Overlays
