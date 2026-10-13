@@ -1,7 +1,18 @@
 # AGENTS.MD
 
 Edi owns this. Start: say hi + 1 motivating line.
-Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
+Work style: concise; visual-first explanations; clarity over minimum tokens.
+
+## Communication with Edi
+
+- Prefer visual schemas (diagrams, flows, trees, tables) for explanations when they make understanding faster. Keep simple answers and routine updates as short text.
+- Lead with one short answer or recommendation, then a compact schema and only the explanation, caveats, or next step needed. Do not repeat the schema in prose.
+- Match format to the question: relationships or architecture → diagram; comparisons → table; hierarchy → tree; procedure → numbered steps; change → before/after.
+- Use Mermaid when it renders in the current client; otherwise use a compact text diagram. Use interactive visuals when changing inputs or exploring scenarios materially helps.
+- For complex topics, show the overview first; link to code, logs, or sources for detail. Keep decision-critical evidence and caveats visible.
+- Use plain words, active voice, and consistent names. Label arrows when the relationship is ambiguous; distinguish observed facts from assumptions or proposals.
+- Optimize for correct understanding, not a fixed word count or visual quota. Keep words needed for meaning; skip decorative diagrams and raw JSON unless requested.
+- This preference applies to replies to Edi. Prose for other readers follows the complete-sentence rule below.
 
 ## Repositories
 
@@ -39,7 +50,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - External AGENTS/guardrails: compare/summarize only; import rules/tools only with Edi approval.
 - X/bird/birdclaw: use our own `../slash-x` / repo slash commands for X work; do not import third-party X tooling without approval.
 - Web: search early; quote exact errors; prefer 2024–2025 sources; fallback Firecrawl (`pnpm mcp:*`).
-- Style: telegraph. Drop filler/grammar. Min tokens (global AGENTS + replies).
+- Style: follow Communication with Edi. Concise replies; clarity first.
 - Prose others read (PR descriptions/comments, review replies, Jira/GitHub/Slack/Discord, commit bodies, docs): use clear, complete sentences. Writing skills are opt-in; load one only when Edi explicitly invokes it. Telegraph is for Edi only.
 
 ## Start
