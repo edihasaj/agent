@@ -1,39 +1,33 @@
 ---
-summary: 'Multi-agent system directives and coordination rules. Master reference for agent behavior.'
+summary: 'Native agent delegation and optional persistent terminal sessions, without the retired farm automation.'
 read_when:
-  - Coordinating subagents or running tmux-based agent sessions.
+  - Coordinating authorized subagents or checking retired tmux agent instructions.
 ---
 
-# Claude Subagent Quickstart
+# Agent delegation
 
-## CLI Basics
-- Launch long-running subagents inside tmux so the session can persist. Example:
+Use the active runtime's native delegation when Edi explicitly requests parallel
+agent work. Give each worker a bounded task and a disjoint write scope. Delegation
+does not require a separate terminal, an account switch, or a tmux farm.
 
-  ```bash
-  tmux new-session -d -s claude-haiku 'claude --model haiku'
-  tmux attach -t claude-haiku
-  ```
+Claude Code's current reusable roles and model routing are documented in
+`~/Projects/manager/docs/claude-agents.md`. Do not override those defaults with
+the historical Haiku launch recipe.
 
-  Once inside the session, run `/model` to confirm the active alias (`haiku` maps to Claude 3.5 Haiku) and switch models if needed.
-- Need to queue instructions without attaching? Use `bun scripts/agent-send.ts --session <name> -- "your command"` to inject text into a running agent session (single Enter is sent by default).
-- Always switch to the fast Haiku model upfront (`claude --model haiku --dangerously-skip-permissions …` or `/model haiku` in-session) to keep turnaround fast.
-- Two modes:
-  - **One-shot tasks** (single summary, short answer): run `claude --model haiku --dangerously-skip-permissions --print …` in a tmux session, wait with `sleep 30`, then read the output buffer.
-  - **Interactive tasks** (multi-file edits, iterative prompts): start `claude --model haiku --dangerously-skip-permissions` in tmux, send prompts with `tmux send-keys`, and capture completed responses with `tmux capture-pane`. Expect to sleep between turns so Haiku can finish before you scrape the pane.
-- Ralph’s supervisor loop launches Claude the same way (`claude --dangerously-skip-permissions "<prompt>"`) to keep the tmux automation flowing.
+## Ordinary CLI sessions
 
-## One-Shot Prompts
-- The CLI accepts the prompt as a trailing argument in one-shot mode. Multi-line prompts can be piped: `echo "..." | claude --print`.
-- Add `--output-format json` when you need structured fields (e.g., summary + bullets) for post-processing.
-- Keep prompts explicit about reading full files: “Read docs/example.md in full and produce a 2–3 sentence summary covering all sections.”
+Start `claude` or `codex` directly in the repository. Their normal profiles,
+permissions, hooks and authentication remain in effect. Keep prompts explicit
+about the files and result needed.
 
-## Bulk Markdown Conversion
-- Produce the markdown inventory first (`pnpm run docs:list`) and feed batches of filenames to your Claude session.
-- For each batch, issue a single instruction like “Rewrite these files with YAML front matter summaries, keep all other content verbatim.” Haiku can loop over multi-file edits when you provide the explicit list.
-- After Claude reports success, diff each file locally (`git diff docs/<file>.md`) before moving to the next batch.
+Use the active agent's background-job support for builds and other long jobs.
+Use ordinary tmux only when persistence or interaction is needed, such as a
+debugger or server. Do not recreate the farm grid, inject agent prompts into old
+panes, or automatically resume retired agent sessions.
 
-## Ralph Integration Notes
-- Ralph (see `scripts/ralph.ts`) spins up tmux sessions, auto-wakes the worker, and calls Claude as the supervisor via `claude --dangerously-skip-permissions`.
-- Supervisor responses must end with either `CONTINUE`, `SEND: <message>`, or `RESTART`; Ralph parses these tokens to decide the next action.
-- To start Ralph manually: `bun scripts/ralph.ts start --goal "…" [--markdown path]`. Progress is tracked in `.ralph/progress.md` by default.
-- Send ad-hoc instructions to the worker session with `bun scripts/ralph.ts send-to-worker -- "your guidance"`.
+## Retired automation
+
+The former `scripts/agent-send.ts` and `scripts/ralph.ts` recipes are not available
+in this repository. Their tmux prompt injection, supervisor loop and forced
+model switching are not part of the current setup. Historical conversations
+and protected retirement backups remain recoverable.
