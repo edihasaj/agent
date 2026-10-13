@@ -102,12 +102,12 @@ export function inspectRepo(root, environment = process.env, fetch = false) {
   };
 }
 
-function validateRepos(repos) {
+function validateRepos(repos, { reconcileOnly = false } = {}) {
   const problems = [];
   for (const repo of repos) {
-    if (repo.dirty) problems.push(`${repo.root}: dirty worktree`);
+    if (repo.dirty && !reconcileOnly) problems.push(`${repo.root}: dirty worktree`);
     if (repo.branch !== repo.expected) problems.push(`${repo.root}: branch=${repo.branch || "detached"}, expected=${repo.expected}`);
-    if (repo.ahead > 0) problems.push(`${repo.root}: ${repo.ahead} unpushed commit(s)`);
+    if (repo.ahead > 0 && !reconcileOnly) problems.push(`${repo.root}: ${repo.ahead} unpushed commit(s)`);
   }
   if (problems.length > 0) throw new Error(`automatic sync blocked; ${problems.join("; ")}`);
 }
@@ -180,7 +180,7 @@ export function runAgentSync(argv = process.argv.slice(2), environment = process
     const roots = [agentRoot];
     if (!setupState.publicOnly && existsSync(managerRoot)) roots.push(managerRoot);
     let repos = roots.map((root) => inspectRepo(root, syncEnvironment, !options.reconcileOnly));
-    validateRepos(repos);
+    validateRepos(repos, options);
     if (!options.reconcileOnly) {
       for (const repo of repos.filter((item) => item.behind > 0)) {
         git(repo.root, ["merge", "--ff-only", `origin/${repo.expected}`], syncEnvironment);
@@ -200,7 +200,7 @@ export function runAgentSync(argv = process.argv.slice(2), environment = process
       trigger: options.reconcileOnly ? "reconcile" : "scheduled",
       startedAt,
       finishedAt: new Date().toISOString(),
-      repos: repos.map(({ root, branch, commit }) => ({ root, branch, commit })),
+      repos: repos.map(({ root, branch, commit, dirty, ahead, behind }) => ({ root, branch, commit, dirty, ahead, behind })),
     };
     writeState(statePath, state);
     if (!options.quiet) process.stdout.write(`agent-sync complete: ${state.finishedAt}\n`);

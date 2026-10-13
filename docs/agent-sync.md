@@ -20,6 +20,11 @@ There is no background job. Configuration changes reach a Mac when you pull:
   the managed `post-merge`/`post-rewrite` hook, which reconciles the checked-out
   instructions, skills, MCP policy and runtime settings at once. Hooks
   preserve Git's exit status.
+- Reconciliation (`--reconcile-only`, also used by the hooks) applies the
+  checked-out configuration, including uncommitted changes and local commits.
+  It does not fetch, merge, stash, or alter repository content. Both repositories
+  must still be on their default branches. Ongoing runbook, backup, and test
+  evidence work therefore does not prevent instruction updates.
 - `bin/agent-sync` does the pull and the reconcile together:
   1. Acquire a single-machine lock.
   2. Fetch both repositories.
@@ -30,8 +35,11 @@ There is no background job. Configuration changes reach a Mac when you pull:
   7. Record a credential-free result in
      `~/.local/state/agent-sync/last-run.json`.
 
-  If either repository is dirty, on another branch, ahead, or diverged,
-  neither is merged and the blocker is printed.
+In fetch-and-merge mode, if either repository is dirty, on another branch,
+ahead, or diverged, neither is merged and the blocker is printed. Reconciliation
+on a default branch can succeed while this Git-update mode remains blocked.
+The last-run record includes each repository's dirty state and ahead/behind
+counts; reconciliation uses the existing local remote refs for those counts.
 
 The scheduled LaunchAgent `com.edihasaj.agent-sync` (every 30 minutes) was
 retired on 2026-10-05. Setup removes it from any Mac that still has it.
