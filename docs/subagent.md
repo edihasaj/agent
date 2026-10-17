@@ -1,18 +1,76 @@
 ---
-summary: 'Native agent delegation and optional persistent terminal sessions, without the retired farm automation.'
+summary: 'Qwen implementation with Codex and Claude orchestrators, independent verification, and bounded fallbacks.'
 read_when:
-  - Coordinating authorized subagents or checking retired tmux agent instructions.
+  - Configuring Codex or Claude model roles and coding fallbacks.
+  - Delegating implementation or coordinating independent verification.
+  - Checking retired tmux agent instructions.
 ---
 
-# Agent delegation
+# Agent roles
 
-Use the active runtime's native delegation when Edi explicitly requests parallel
-agent work. Give each worker a bounded task and a disjoint write scope. Delegation
-does not require a separate terminal, an account switch, or a tmux farm.
+Qwen handles routine implementation and fixes. The larger hosted models define
+the solution, coordinate work, and review the result independently.
+
+| Responsibility | Codex | Claude Code |
+| --- | --- | --- |
+| Orchestration and largest tasks | Astra | Fable |
+| Second-level work and independent verification | Sol | Opus 5.5 |
+| Routine implementation | Qwen | Qwen through the local Codex worker |
+| Qwen implementation fallback | Terra | Sonnet |
+
+Use the configured `orchestrator`, `implementer`, `verifier`, and
+`fallback_implementer` roles. Machine-specific provider configuration and
+canonical role files live in `manager/configs/`; their runbooks live in
+`manager/docs/`. Keep credentials in existing machine-local credential storage.
 
 Claude Code's current reusable roles and model routing are documented in
 `~/Projects/manager/docs/claude-agents.md`. Do not override those defaults with
 the historical Haiku launch recipe.
+
+## Delegation workflow
+
+Use the active runtime's native delegation when authorized by Edi's request or
+applicable repository instructions. Delegation does not require a separate
+terminal, an account switch, or a tmux farm.
+
+1. The orchestrator writes a bounded specification, acceptance checks, and file
+   ownership for each task.
+2. The implementer changes the assigned files, runs suitable checks, fixes
+   failures, and returns the actual results.
+3. A fresh verifier inspects the implementation against the specification and
+   reports actionable defects or the available validation evidence.
+4. The orchestrator sends concrete defects back for correction and repeats
+   verification until significant defects are resolved.
+
+Keep Qwen on tasks it can complete. Use the hosted implementation fallback only
+when the endpoint is unavailable or a focused correction cannot resolve a
+blocker. Automatic delegation and task-based fallback are instruction policies;
+they do not guarantee that every task follows a fixed state machine.
+
+Start agents with a fresh task when their model or provider differs. Pass the
+specification and necessary evidence without unrelated parent history. Parallel
+workers must own different files. Workers should not delegate further unless
+the orchestrator explicitly assigns that responsibility.
+
+## Runtime differences
+
+The local Codex profile selects Qwen and its provider together. The installed
+Codex runtime failed a mixed-provider child test, so the named `implementer`
+coordinates Qwen through that separate profile process. Selecting only a default
+subagent model does not switch providers. Open a new chat after changing roles.
+The verifier's instructions prohibit edits. Check the actual permission mode
+because live parent overrides can supersede a role's sandbox default.
+
+Claude Code's hosted implementer coordinates the local worker through the
+existing Codex CLI profile:
+
+```sh
+codex exec -p spark-implementer -C /path/to/repository 'Implement the assigned task and report validation.'
+```
+
+This keeps inference for the coding work on Qwen while the Claude parent keeps
+its hosted model. Claude's Sonnet implementation fallback performs coding
+directly when the orchestrator explicitly selects that fallback.
 
 ## Ordinary CLI sessions
 

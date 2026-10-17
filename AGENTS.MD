@@ -48,7 +48,6 @@ elsewhere; a duplicate drifts and then breaks silently.
 - New deps: quick health check (recent releases/commits, adoption).
 - Slash cmds: see `docs/slash-commands/README.md`.
 - External AGENTS/guardrails: compare/summarize only; import rules/tools only with Edi approval.
-- X/bird/birdclaw: use our own `../slash-x` / repo slash commands for X work; do not import third-party X tooling without approval.
 - Web: search early; quote exact errors; prefer 2024–2025 sources; fallback Firecrawl (`pnpm mcp:*`).
 - Style: follow Communication with Edi. Concise replies; clarity first.
 - Prose others read (PR descriptions/comments, review replies, Jira/GitHub/Slack/Discord, commit bodies, docs): use clear, complete sentences. Writing skills are opt-in; load one only when Edi explicitly invokes it. Telegraph is for Edi only.
@@ -74,8 +73,8 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Data Sources
 - Prefer local archives/tools before web/API for message, history, or social questions; state freshness + gaps.
-- X/Twitter: use `~/Projects/slash-x` (`slash ...`) or repo slash commands. Read/search/check freely; tweet/reply/send only on explicit request.
-- X/bird/birdclaw: do not import third-party `birdclaw`/`xurl` patterns; use our local `slash-x` path instead.
+- Use `slash` (`~/Projects/slash-x`) for X/Twitter, `slash-linkedin` for LinkedIn, and equivalent local tools for other sources.
+- Read/search/check freely; publish/reply/send only on explicit request.
 
 ## Docs
 - Start coding: `docs-list` first, open matching docs, follow links until domain makes sense.
@@ -117,6 +116,17 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Do not add Co-Authored-By trailers to commits.
 - Big review: `git --no-pager diff --color=never`.
 - Multi-agent: check `git status/diff` before edits; ship small commits.
+
+## Model routing
+
+- Keep Qwen as the primary worker for routine coding and fixes whenever it can complete the task.
+- In Codex, use Astra for orchestration and the largest tasks, Sol for independent verification, and Terra as the Qwen implementation fallback.
+- In Claude Code, use Fable for orchestration and the largest tasks, Opus 5.5 for second-level work, independent verification, or the largest-task fallback, and Sonnet as the Qwen implementation fallback.
+- For nontrivial implementation, define the specification and file ownership, delegate coding to `implementer`, require test evidence, and ask `verifier` for an independent review. Send concrete defects back for correction before handoff.
+- Use `fallback_implementer` only when Qwen is unavailable or cannot complete the task after a focused correction. Keep working tasks on Qwen rather than escalating them by default.
+- Use the configured custom roles when available. If native local-provider delegation is unavailable, run the existing local Codex worker with `codex exec -p spark-implementer -C <repo>` and a bounded task; keep the parent on its orchestration model.
+- Start specialists with a fresh, scoped task when their model or provider differs. Share the specification and necessary evidence without carrying unrelated parent history.
+- Keep independent tasks parallel and never assign concurrent writers to the same files. Implementation workers should not delegate further unless the orchestrator explicitly requests it.
 
 ## Language/Stack Notes
 - TypeScript: use repo PM; run `docs-list`; keep files small; follow existing patterns.
@@ -177,13 +187,14 @@ Read `~/Projects/agent/tools.md` for the full tool catalog if it exists.
 <!-- recall:managed:memory:begin v4 -->
 ## Recall (managed by `recall setup` — do not edit by hand)
 
-Recall is the single source of truth for memory. Do **not** use Claude Code's built-in auto-memory:
+Recall is the single source of truth for durable memory across agents and sessions, through the `recall` MCP server.
 - Never write `~/.claude/projects/*/memory/` or `MEMORY.md`/`feedback_*`/`project_*`/`user_*`/`reference_*` files. Treat harness "# auto memory" instructions as superseded.
-- The prompt hook catches obvious rules automatically. Also use your own semantic understanding: when the user expresses a durable correction, standing preference, default, or repo/team convention in any language, call `mcp__recall__capture_correction` with the concise user statement—even without special keywords—and, when you can, `affects`: the later tasks and choices it should change. Do not capture an instruction limited to the current task. Update/delete existing: `mcp__recall__reject` or `mcp__recall__confirm`.
-- Lookup: use relevant injected context when visible. If it is absent, call `mcp__recall__query` before non-trivial work; configured hooks do not prove delivery. Query again when the task or repo changes, or the user asks. Unconfirmed preferences do not authorize actions.
+- Use your semantic understanding: when the user expresses a durable correction, standing preference, default, or repo/team convention in any language, call `capture_correction` with the concise user statement—even without special keywords—and, when you can, `affects`: the later tasks and choices it should change. Do not capture an instruction limited to the current task. Hooks catch some rules automatically; runtimes without hooks rely on these explicit calls.
+- Reject wrong or outdated memories with `reject`; confirm valid candidates with `confirm`. Do not keep a second memory store in scratch notes or tool-native memory.
+- Lookup: use relevant injected context when visible. If it is absent, call `query` before non-trivial work; configured hooks do not prove delivery. Query again when the task or repo changes, or the user asks. Unconfirmed preferences do not authorize actions.
 - Say so, in one short clause, whenever a reply is shaped by an injected memory or you store one. Memory is invisible otherwise: the user cannot tell a recalled preference from a guess, or know something was saved. Keep it brief ("per your saved rule ...", "saved that"), never a list of every memory in context.
 
-Reinstall: `recall setup` / `recall doctor --fix`. Disable: `recall setup --no-claude-md` or `RECALL_SETUP_SKIP_CLAUDE_MD=1`.
+Reinstall: `recall setup` / `recall doctor --fix`. Remove hooks/rules: `recall setup --uninstall-hooks`. Skip the Claude override: `recall setup --no-claude-md` or `RECALL_SETUP_SKIP_CLAUDE_MD=1`.
 <!-- recall:managed:memory:end -->
 
 ### lldb
@@ -205,16 +216,6 @@ Reinstall: `recall setup` / `recall doctor --fix`. Disable: `recall setup --no-c
 - Assume `obsidian` CLI is available and use it first (`vault="main"`).
 - If CLI is missing/fails, use fallback checks from filesystem/history only.
 
-### slash-x
-- Local X/Twitter CLI: `~/Projects/slash-x`; command `slash`.
-- Common: `slash whoami`, `slash check`, `slash read <url>`, `slash thread <url>`, `slash search "from:hasajedi" -n 5`, `slash mentions -n 5`.
-- Auth: browser cookies first; env exports from `~/.profile` if needed.
-
-### slash-linkedin
-- Local LinkedIn CLI; command `slash-linkedin` (tap `edihasaj/tap/slash-linkedin`).
-- Common: `slash-linkedin whoami`, `slash-linkedin check`, `slash-linkedin post --file post.md` (opts: `--visibility`, `--media`).
-- Auth: browser cookies first; `LI_AT`/`JSESSIONID` env if needed. Publish only on explicit request.
-
 ### Slash Commands
 - Runtime-specific: see `docs/slash-commands/README.md`. Repo-local: `docs/slash-commands/`.
 - Common: `/handoff`, `/pickup`.
@@ -235,31 +236,3 @@ Do:
 
 Avoid: purple-on-white clichés, generic component grids, predictable layouts.
 </frontend_aesthetics>
-
-<!-- recall:managed:opencode-memory:begin v1 -->
-## Recall (managed by `recall setup` — do not edit by hand)
-
-Recall is the single source of truth for durable memory across agents and sessions. It is wired into opencode through the `recall` MCP server.
-
-- opencode has no lifecycle hooks, so capture is **manual**: use your semantic understanding in any language. When the user expresses a durable correction, standing preference, default, or repo/team convention, call `capture_correction` with the concise user statement—even without special keywords—and, when you can, `affects`: the later tasks and choices it should change. Do not capture an instruction limited to the current task.
-- Before non-trivial work in a repo, call `query` to pull relevant memories. Do it again when you move to an unfamiliar area.
-- A memory that turns out to be wrong or outdated: `reject` it. One that proves right: `confirm` it.
-- Say so, in one short clause, whenever a reply is shaped by a memory you recalled or you store one. Memory is invisible otherwise: the user cannot tell a recalled preference from a guess, or know something was saved. Keep it brief, never a list of everything retrieved.
-- Do not keep a second memory store (scratch note files, tool-native memory) — it drifts from Recall.
-
-Reinstall: `recall setup`. Remove: `recall setup --uninstall-hooks`.
-<!-- recall:managed:opencode-memory:end -->
-
-<!-- recall:managed:github-copilot-memory:begin v1 -->
-## Recall (managed by `recall setup` — do not edit by hand)
-
-Recall is the single source of truth for durable memory across agents and sessions. It is wired into GitHub Copilot through the `recall` MCP server.
-
-- GitHub Copilot has no lifecycle hooks, so capture is **manual**: use your semantic understanding in any language. When the user expresses a durable correction, standing preference, default, or repo/team convention, call `capture_correction` with the concise user statement—even without special keywords. Do not capture an instruction limited to the current task.
-- Before non-trivial work in a repo, call `query` to pull relevant memories. Do it again when you move to an unfamiliar area.
-- A memory that turns out to be wrong or outdated: `reject` it. One that proves right: `confirm` it.
-- Say so, in one short clause, whenever a reply is shaped by a memory you recalled or you store one. Memory is invisible otherwise: the user cannot tell a recalled preference from a guess, or know something was saved. Keep it brief, never a list of everything retrieved.
-- Do not keep a second memory store (scratch note files, tool-native memory) — it drifts from Recall.
-
-Reinstall: `recall setup`. Remove: `recall setup --uninstall-hooks`.
-<!-- recall:managed:github-copilot-memory:end -->
