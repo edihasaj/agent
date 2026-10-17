@@ -18,10 +18,13 @@ the solution, coordinate work, and review the result independently.
 | Routine implementation | Qwen | Qwen through the local Codex worker |
 | Qwen implementation fallback | Terra | Sonnet |
 
+In Claude Code, Opus 5.5 also handles the largest-task fallback.
+
 Use the configured `orchestrator`, `implementer`, `verifier`, and
 `fallback_implementer` roles. Machine-specific provider configuration and
 canonical role files live in `manager/configs/`; their runbooks live in
 `manager/docs/`. Keep credentials in existing machine-local credential storage.
+Keep the parent on its orchestration model when invoking an implementation worker.
 
 Claude Code's current reusable roles and model routing are documented in
 `~/Projects/manager/docs/claude-agents.md`. Do not override those defaults with
@@ -47,10 +50,11 @@ when the endpoint is unavailable or a focused correction cannot resolve a
 blocker. Automatic delegation and task-based fallback are instruction policies;
 they do not guarantee that every task follows a fixed state machine.
 
-Start agents with a fresh task when their model or provider differs. Pass the
-specification and necessary evidence without unrelated parent history. Parallel
-workers must own different files. Workers should not delegate further unless
-the orchestrator explicitly assigns that responsibility.
+Keep independent tasks parallel. Start agents with a fresh task when their model
+or provider differs. Pass the specification and necessary evidence without
+unrelated parent history. Parallel workers must own different files. Workers
+should not delegate further unless the orchestrator explicitly assigns that
+responsibility.
 
 ## Runtime differences
 
@@ -61,8 +65,9 @@ subagent model does not switch providers. Open a new chat after changing roles.
 The verifier's instructions prohibit edits. Check the actual permission mode
 because live parent overrides can supersede a role's sandbox default.
 
-Claude Code's hosted implementer coordinates the local worker through the
-existing Codex CLI profile:
+If native local-provider delegation is unavailable, use the existing local
+Codex worker with a bounded task. Claude Code's hosted implementer uses the
+same profile:
 
 ```sh
 codex exec -p spark-implementer -C /path/to/repository 'Implement the assigned task and report validation.'
@@ -78,10 +83,10 @@ Start `claude` or `codex` directly in the repository. Their normal profiles,
 permissions, hooks and authentication remain in effect. Keep prompts explicit
 about the files and result needed.
 
-Use the active agent's background-job support for builds and other long jobs.
-Use ordinary tmux only when persistence or interaction is needed, such as a
-debugger or server. Do not recreate the farm grid, inject agent prompts into old
-panes, or automatically resume retired agent sessions.
+Follow `AGENTS.MD`'s Flow & Runtime rules for background jobs and persistent
+terminals; see `tools.md` for command usage. Do not recreate the farm grid,
+inject agent prompts into old panes, or automatically resume retired agent
+sessions.
 
 ## Retired automation
 

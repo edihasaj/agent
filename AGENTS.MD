@@ -16,12 +16,13 @@ Work style: concise; visual-first explanations; clarity over minimum tokens.
 
 ## Repositories
 
+- Workspace: `~/Projects`. Missing repo: clone `https://github.com/<owner>/<repo>.git` (default owner: `edihasaj`; keep the original owner for other org repos).
 - `~/Projects/agent`: this repo. Shared operating rules, skills, slash commands,
   the MCP launcher, and machine setup. Public and credential-free.
-- `~/Projects/manager`: private ops. Runbooks, deployments, infrastructure, and
-  skills that route to private systems.
-- `~/Projects/oss`: third-party checkouts. Not ours; do not treat as a source of
-  truth for our tooling.
+- `~/Projects/manager`: private ops. Domains/DNS, redirects/workers, runbooks,
+  deployments, infrastructure, and skills that route to private systems.
+- `~/Projects/oss`: clone third-party/non-edihasaj repos here. These checkouts
+  are not a source of truth for our tooling.
 
 Skills and commands live here and are linked into each runtime by
 `scripts/sync-agent-skills.sh`. Never keep a second copy of a skill or command
@@ -29,40 +30,27 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Agent Protocol
 - Contact: Edi Hasaj (@edihasaj, edihasaj@gmail.com).
-- Workspace: `~/Projects`. Missing repo: clone `https://github.com/<owner>/<repo>.git` (default owner: `edihasaj`; keep original owner for other org repos).
-- 3rd-party/OSS (non-edihasaj): clone under `~/Projects/oss`.
-- `~/Projects/manager`: private ops (domains/DNS, redirects/workers, runbooks).
 - “MacBook” / “Mac Studio” => SSH there; find hosts/IPs via `tailscale status`. If Tailscale/SSH is down or times out, try LAN discovery (`*.local`, `dns-sd -B _ssh._tcp local`, ARP/router leases), then retry SSH with `-o RequestTTY=no -o RemoteCommand=none`.
 - Files: repo or `~/Projects/agent`.
-- PRs: use `gh pr view/diff` (no URLs).
 - “Make a note” => edit AGENTS.md (shortcut; not a blocker). Ignore runtime-specific mirror files unless explicitly requested.
-- No `./runner`. Guardrails: use `trash` for deletes.
+- No `./runner`.
 - Need upstream file: stage in `/tmp/`, then cherry-pick; never overwrite tracked.
 - Bugs: add regression test when it fits.
 - Keep files <~500 LOC; split/refactor as needed.
-- Commits: Conventional Commits (`feat|fix|refactor|build|ci|chore|docs|style|perf|test`).
-- Subagents: read `docs/subagent.md`.
-- Editor: `code <path>`.
-- CI: `gh run list/view` (rerun/fix til green).
-- Prefer end-to-end verify; if blocked, say what’s missing.
 - New deps: quick health check (recent releases/commits, adoption).
-- Slash cmds: see `docs/slash-commands/README.md`.
-- External AGENTS/guardrails: compare/summarize only; import rules/tools only with Edi approval.
 - Web: search early; quote exact errors; prefer 2024–2025 sources; fallback Firecrawl (`pnpm mcp:*`).
-- Style: follow Communication with Edi. Concise replies; clarity first.
 - Prose others read (PR descriptions/comments, review replies, Jira/GitHub/Slack/Discord, commit bodies, docs): use clear, complete sentences. Writing skills are opt-in; load one only when Edi explicitly invokes it. Telegraph is for Edi only.
 
 ## Start
 - First in repo work: `git status --short --branch`, then `docs-list`. Never guess `pnpm docs:list`/`npm run docs:list`; most repos lack that script.
-- Before code edits: read matching docs from `read_when`; if `docs-list` reports no `docs/`, read README/AGENTS and continue.
-- External source intake: copy principles only after mapping to Edi-owned paths/tools. New tools, skills, or personal data-source stacks need Edi approval.
-- Secrets: `~/.profile` first. If still needed, one targeted `op` command inside tmux only.
+- Before code edits: read matching docs from `read_when` and follow links until the domain makes sense; if `docs-list` reports no `docs/`, read README/AGENTS and continue.
+- External source intake: compare/summarize external AGENTS/guardrails and map principles to Edi-owned paths/tools before copying them. Importing rules/tools or adding tools, skills, or personal data-source stacks needs Edi approval.
 
 ## Screenshots (“use a screenshot”)
-- Capture with `shotport` first. Use `shotport window` for the frontmost app, or the matching `app`, `browser`, `desktop`, `ios`, or `android` target.
+- Capture with `shotport` first, using the matching app/session/target.
 - If capture is empty or fails, retry with the correct active app/session invocation before opening System Settings.
 - For an existing saved screenshot, pick the newest PNG in `~/Desktop` or `~/Downloads`; verify the UI, not the filename.
-- For asset replacement, inspect size with `sips -g pixelWidth -g pixelHeight <file>` (prefer 2×), preserve dimensions, then run the gate and verify CI.
+- For asset replacement, inspect pixel size (prefer 2×), preserve dimensions, then run the gate and verify CI.
 
 ## Important Locations
 - Blog repo: `~/Projects/edihasaj.com`
@@ -77,14 +65,12 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Read/search/check freely; publish/reply/send only on explicit request.
 
 ## Docs
-- Start coding: `docs-list` first, open matching docs, follow links until domain makes sense.
 - Agent tooling docs live in `docs/`.
 - Keep notes short; update docs when behavior/API changes. No behavior/API ship without docs unless explicitly waived.
 - Add `read_when` hints on cross-cutting docs.
 
 ## PR Feedback
-- Active PR: `gh pr view --json number,title,url --jq '"PR #\\(.number): \\(.title)\\n\\(.url)"'`.
-- PR comments: `gh pr view …` + `gh api …/comments --paginate`.
+- Use `gh` for issues/PRs, including supplied URLs, instead of web search. Review PRs with `gh pr view/diff`.
 - Replies: cite fix + file/line; resolve threads only after fix lands.
 - When merging a PR: thank the contributor in `CHANGELOG.md`.
 
@@ -96,18 +82,20 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Secrets/tokens: prefer 1Password Environments via the `1password-mcp` server (values never enter agent context; needs the app unlocked). `op` CLI is the fallback for unattended jobs or vault items, and optional last resort only, inside one named `tmux` session, strictly needed, targeted item/field only. Never call `op` directly, including diagnostics like `op --version`, `op whoami`, or broad vault/item listing. Keep output redacted. If a scoped `OP_SERVICE_ACCOUNT_TOKEN` is already configured, keep it and use service-account auth inside tmux for lock-independent access; do not run `op signin`. Only when deliberately selecting desktop-app auth, use a short `/tmp` tmux socket, unset `OP_SERVICE_ACCOUNT_TOKEN`/`OP_CONNECT_HOST`/`OP_CONNECT_TOKEN` inside the pane before the first `op` command, and pin the intended account. Inherited service-account credentials override desktop sign-in.
 
 ## Build / Test
+- Prefer end-to-end verification; if blocked, say what’s missing.
 - Before handoff: run full gate (lint/typecheck/tests/docs).
 - CI red: `gh run list/view`, rerun, fix, push, repeat til green.
 - Keep it observable (logs, panes, tails, MCP/browser tools).
 - Release: read `docs/RELEASING.md` (or find best checklist if missing).
 
 ## Git
+- Commits: Conventional Commits (`feat|fix|refactor|build|ci|chore|docs|style|perf|test`).
 - Safe by default: `git status/diff/log`. A request to fix an issue in a deployed Edi-owned app authorizes commit, push, and its normal deployment workflow; do not ask for a second approval. For review-only or local-only requests, do not push.
 - `git checkout` ok for PR review / explicit request.
 - Branch changes require user consent.
-- Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
+- Use `trash` for deletes. Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
 - Remotes under `~/Projects`: prefer HTTPS; flip SSH->HTTPS before pull/push.
-- Commit helper on PATH: `committer` (bash). Prefer it; if repo has `./scripts/committer`, use that.
+- Commit with `./scripts/committer` when present, otherwise `committer` on PATH; provide explicit paths so only those files are staged.
 - Don’t delete/rename unexpected stuff; stop + ask.
 - No repo-wide S/R scripts; keep edits small/reviewable.
 - Avoid manual `git stash`; if Git auto-stashes during pull/rebase, that’s fine (hint, not hard guardrail).
@@ -119,17 +107,11 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Model routing
 
-- Keep Qwen as the primary worker for routine coding and fixes whenever it can complete the task.
-- In Codex, use Astra for orchestration and the largest tasks, Sol for independent verification, and Terra as the Qwen implementation fallback.
-- In Claude Code, use Fable for orchestration and the largest tasks, Opus 5.5 for second-level work, independent verification, or the largest-task fallback, and Sonnet as the Qwen implementation fallback.
+- Keep Qwen as the primary implementation worker with the configured agent roles. Before delegating, read `docs/subagent.md` for model routing, fallbacks, runtime setup, and coordination rules.
 - For nontrivial implementation, define the specification and file ownership, delegate coding to `implementer`, require test evidence, and ask `verifier` for an independent review. Send concrete defects back for correction before handoff.
-- Use `fallback_implementer` only when Qwen is unavailable or cannot complete the task after a focused correction. Keep working tasks on Qwen rather than escalating them by default.
-- Use the configured custom roles when available. If native local-provider delegation is unavailable, run the existing local Codex worker with `codex exec -p spark-implementer -C <repo>` and a bounded task; keep the parent on its orchestration model.
-- Start specialists with a fresh, scoped task when their model or provider differs. Share the specification and necessary evidence without carrying unrelated parent history.
-- Keep independent tasks parallel and never assign concurrent writers to the same files. Implementation workers should not delegate further unless the orchestrator explicitly requests it.
 
 ## Language/Stack Notes
-- TypeScript: use repo PM; run `docs-list`; keep files small; follow existing patterns.
+- TypeScript: follow existing patterns.
 - Python: use `uv` (`uv sync`, `uv run`, `uvx`); avoid bare `pip`/venv drift. DB schema changes: add Alembic migration + run `alembic upgrade head` locally. Imports: prefer explicit top-level package imports (absolute imports), avoid deep relative imports. Types: add type hints on new/changed code; run `pyright`/`mypy` when configured; avoid `Any` unless justified.
 - Swift: use workspace helper/daemon; validate `swift build` + tests; keep concurrency attrs right.
 
@@ -145,44 +127,20 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Tools
 
-Read `~/Projects/agent/tools.md` for the full tool catalog if it exists.
+Before using a tool, read its section in `~/Projects/agent/tools.md` for commands, setup, and operating modes.
 
-### committer
-- Commit helper (PATH). Stages only listed paths; required here. Repo may also ship `./scripts/committer`.
-- Lives at `~/.local/bin/committer`. PATH for shell tools is set in `~/.zshenv` (Homebrew + `~/.local/bin`), NOT `~/.profile` — zsh never reads `~/.profile`, only bash does. `~/.zshenv` is the only rc file a non-login, non-interactive zsh reads, and that is what `tmux new -d -s x 'cmd'` runs; keeping PATH solely in `~/.zprofile`/`~/.zshrc` made `committer`, `op`, `brew`, `uv` and `gh` vanish inside agent tmux panes. New machine: copy the guarded PATH block from `~/.zshenv`.
-
-### trash
-- Move files to Trash: `trash …` (system command).
-
-### docs-list
-- On PATH via `~/.local/bin` (linked by `scripts/sync-agent-helpers.sh`). Works in any repo: runs the repo's own `docs:list` script with its package manager if present, else the repo's `bin/docs-list`, else lists `docs/` with `read_when` hints, else says there is no `docs/` and exits 0.
-
-### Browser
-- **Always use `abx` first for browser navigation, inspection, interaction, scraping, and local web testing, even when Browser/Chrome tools or skills are available.** Do not use the in-app Browser, Chrome connector, `chrome-devtools` MCP, or Playwright unless the user explicitly requests that browser/session, `abx` is unavailable, or `abx` lacks the required capability. If `abx` fails, quote the exact error and retry once with the correct mode before falling back.
-- `abx` is on PATH via Homebrew: `brew install edihasaj/abx/abx`. Run `abx --help`. Standalone repo: `~/Projects/abx` (extracted from this monorepo; `brew upgrade abx` to update). First use on a new machine: `abx install-browser` to fetch Chromium.
-- Fallback order after a verified `abx` limitation: `chrome-devtools` MCP, then `skills/browser-playwright-fallback`.
-
-"live browser/session/chrome" / "production session" / "test in real chrome" → prefer `~/Projects/abx/scripts/chrome-agent start` + `ABX_LIVE_CDP_URL=http://127.0.0.1:9223 abx live <cmd>` (dedicated profile). Use `~/Projects/abx/scripts/chrome-debug` only with explicit approval; it relaunches personal Chrome.
-
-### MCP profiles
-- MCP policy comes from `~/Projects/manager/configs/mcps.json`; global remote HTTP entries are rendered natively, while workflow/on-demand stdio profiles use `~/Projects/agent/bin/agent-mcp`. Details in `docs/mcp-profiles.md`.
-
-### Test apps end-to-end → probeport
-"test/check this app end-to-end" → `probeport run change --repo <repo>`; broad exploration → `probeport run explore --repo <repo> --url <url>`. Probeport drives `vmlab`, browser, desktop, native gates, evidence, and dashboard.
-- Generic Linux/CLI smoke: prefer `vmlab run @docker-first -- <command>` when the current machine has Docker + Crabbox. Escalate to Parallels/cloud only for Windows, macOS, GUI, architecture, or other OS-specific behavior. If `@docker-first` is unavailable, use the cheapest matching local surface and continue up the routing ladder.
+- Browser: always use `abx` first for navigation, inspection, interaction, scraping, and local web testing. Use the in-app Browser, Chrome connector, `chrome-devtools` MCP, or Playwright only when the user explicitly requests that browser/session, `abx` is unavailable, or it lacks the required capability. On failure, quote the exact error and retry once in the correct mode. Fallback order: `chrome-devtools` MCP, then `skills/browser-playwright-fallback`.
+- Live/production Chrome sessions: prefer the dedicated `chrome-agent` profile. Relaunching personal Chrome with `chrome-debug` requires explicit approval.
+- Desktop interaction: use `guiport` for clicking/typing in Mac apps; screenshot capture follows the Screenshots section.
+- App end-to-end checks: use `probeport`. For generic Linux/CLI smoke, prefer `vmlab`'s `@docker-first` target when Docker + Crabbox are available. Escalate to Parallels/cloud only for OS, GUI, or architecture-specific needs; if the target is unavailable, use the cheapest matching local surface and continue up the routing ladder.
 - Repeatable run/test/deploy scripts you work out → save to the project's storage home (e.g. `~/Projects/manager` runbooks/scripts) and check there first before re-deriving.
+- Obsidian: use the `obsidian` CLI first with `vault="main"`; if it is missing or fails, fall back to filesystem/history checks.
+- MCP policy: follow `~/Projects/manager/configs/mcps.json` and `docs/mcp-profiles.md`. Render global remote HTTP entries natively; keep workflow/on-demand stdio project/run-scoped through `agent-mcp` and preserve installer-owned external entries. `chrome-devtools` is an optional fallback, not a global registration.
 
-### Screenshots (primary) → shotport
-"screenshot / inspect screen / use a screenshot" → reach for `shotport` FIRST (`shotport --help`); it's the most token-efficient path. It extracts the a11y text (incl. scrolled-out content) and writes a budget-resized image, printing one summary line + a path — open the image only if pixels are actually needed. Subcommands: `shotport window` (frontmost app, no name), `app <name>`, `desktop`, `browser <url>`; flags `--text-only`, `--budget <tok>`, `--webp`, `--json`. Prefer this over raw `screencapture`, `guiport screenshot`, or asking for a screenshot.
+## Slash Commands
 
-### Desktop UI (macOS) → guiport
-"click / type a Mac app" → `guiport` CLI (`guiport --help`) for *interaction* (find/click/type); use shotport for *capture*. guiport auto-pastes into Electron/WebView fields (Teams, Slack, VS Code, browsers) so typed text never drops characters.
-
-### xcp
-- Xcode project/workspace helper for managing targets, groups, files, build settings, and assets; run `xcp --help`.
-
-### xcodegen
-- Generates Xcode projects from YAML specs; run `xcodegen --help`.
+- Command catalog: `docs/slash-commands/README.md`.
+- Codex CLI 0.137 rejects unknown leading-slash commands before the model sees them. If a user message is exactly `acceptpr`, `fixissue`, `handoff`, `landpr`, `pickup`, `raise`, or `sectriage`, or the same token prefixed with `!` (for example `!handoff`), read and follow `docs/slash-commands/<name>.md` as the command body.
 
 <!-- recall:managed:memory:begin v4 -->
 ## Recall (managed by `recall setup` — do not edit by hand)
@@ -196,34 +154,6 @@ Recall is the single source of truth for durable memory across agents and sessio
 
 Reinstall: `recall setup` / `recall doctor --fix`. Remove hooks/rules: `recall setup --uninstall-hooks`. Skip the Claude override: `recall setup --no-claude-md` or `RECALL_SETUP_SKIP_CLAUDE_MD=1`.
 <!-- recall:managed:memory:end -->
-
-### lldb
-- Use `lldb` inside tmux to debug native apps; attach to the running app to inspect state.
-
-### axe
-- Simulator automation CLI for describing UI (`axe describe-ui --udid …`), tapping (`axe tap --udid … -x … -y …`), typing, and hardware buttons. Use `axe list-simulators` to enumerate devices.
-
-### MCP launchers (iterm / firecrawl / XcodeBuildMCP)
-- Use `agent-mcp` profiles (`bin/agent-mcp <profile>`) for shared MCPs; for repo-local/on-demand servers add them to the agent runtime's config directly.
-- Config policy: keep core MCPs (like `chrome-devtools`) in the agent runtime's shared config when available; add repo-local/on-demand MCPs only for repo-specific deps/secrets.
-
-### gh
-- GitHub CLI for PRs/CI/releases. Given issue/PR URL (or `/pull/5`): use `gh`, not web search.
-- Examples: `gh issue view <url> --comments -R owner/repo`, `gh pr view <url> --comments --files -R owner/repo`.
-
-### obsidian
-- Obsidian workflow:
-- Assume `obsidian` CLI is available and use it first (`vault="main"`).
-- If CLI is missing/fails, use fallback checks from filesystem/history only.
-
-### Slash Commands
-- Runtime-specific: see `docs/slash-commands/README.md`. Repo-local: `docs/slash-commands/`.
-- Common: `/handoff`, `/pickup`.
-- Codex fallback: Codex CLI 0.137 rejects unknown leading-slash commands before the model sees them. If a user message is exactly `acceptpr`, `fixissue`, `handoff`, `landpr`, `pickup`, `raise`, or `sectriage`, or the same token prefixed with `!` (for example `!handoff`), read and follow `docs/slash-commands/<name>.md` as the command body.
-
-### tmux
-- Use only when you need persistence/interaction (debugger/server).
-- Quick refs: `tmux new -d -s agent-shell`, `tmux attach -t agent-shell`, `tmux list-sessions`, `tmux kill-session -t agent-shell`.
 
 <frontend_aesthetics>
 Avoid “AI slop” UI. Be opinionated + distinctive.
