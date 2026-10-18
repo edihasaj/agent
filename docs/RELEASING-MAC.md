@@ -2,6 +2,7 @@
 summary: 'Reusable macOS release playbook (Sparkle, notarization, GitHub releases)'
 read_when:
   - Shipping or debugging a macOS release.
+  - Maintaining privacy approvals across app or bundled runtime updates.
 ---
 
 # Releasing macOS Apps (Sparkle + GitHub)
@@ -73,6 +74,37 @@ for v in /Volumes/*; do [[ $v == */<App>* ]] && hdiutil detach "$v" -force; done
 - Before zipping, strip resource forks/extended attributes from the app (`xattr -cr <App>.app && find <App>.app -name '._*' -delete`) and zip with `ditto --norsrc -c -k --keepParent …` to avoid AppleDouble files that invalidate signatures.
 - Avoid `unzip` when testing locally; use `ditto -x -k <zip> /Applications` to prevent `._*` files that break signatures.
 - The shared release helpers now always download the enclosure, verify the ed25519 signature, and run `codesign --verify` + `spctl` on the extracted app before publishing—no opt-in flag needed.
+
+### Privacy identity across updates
+
+Keep the app's bundle identifier, Developer ID team, and installed location
+stable. Give bundled interpreters a fixed identifier scoped to the product,
+such as `com.edihasaj.<appname>.runtime.node`; do not derive it from the build
+version or executable hash. App-owned launchd helpers declare the matching
+`AssociatedBundleIdentifiers` after verifying their relationship to that app.
+
+Standalone services keep their signed interpreter at a fixed real path outside
+the service's versioned releases. Homebrew `opt` and `current` symlinks can
+resolve to a new path after an update, so a stable symlink is insufficient.
+Developer tooling and app-owned runtimes can keep separate installation paths.
+
+Verify an upgrade from the previous signed build and inspect the responsible
+code in macOS permission logs. The request may belong to a launcher rather than
+the child tool that accesses the resource. Initial migration and newly used
+capabilities can still require approval. Full Disk Access does not grant
+Accessibility, Automation, Screen Recording, or Local Network access.
+
+Build containers only after signing, notarizing, and stapling their enclosed
+app. A signed DMG can still contain an ad hoc signed app. Extract the ZIP and
+mount the DMG read-only, then verify the enclosed app's identifier, team,
+signature, notarization, and version before publishing either artifact.
+
+Record a per-machine inventory before removing old permission entries. Protect
+active executables, loaded launchd jobs, current releases, and rollback targets.
+Use the supported per-entry controls available on that macOS version; broad
+privacy resets discard unrelated approvals. See Apple's
+[local network privacy guidance](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy)
+for platform-specific identity and reset limitations.
 
 ### Shared release helpers (release/sparkle_lib.sh)
 - `require_clean_worktree` — fail fast if git is dirty.
@@ -151,6 +183,8 @@ sign_update -f "$SPARKLE_PRIVATE_KEY_FILE" path/to/<App>-<ver>.dmg --account "${
 - [ ] Tag + GitHub release created; assets uploaded; URLs in appcast resolve (200/OK).
 - [ ] After publishing, bump `CHANGELOG.md`: move the shipped notes under the released version, increment its patch number, and start a new `Unreleased` section for the next patch.
 - [ ] Downloaded artifact passes `spctl`, `codesign`, `stapler`; no `._*` files.
+- [ ] Bundled runtimes and launchd helpers keep stable permission identities.
+- [ ] Every ZIP and DMG contains the verified signed app, and upgrade attribution was checked.
 - [ ] Update flow validated from a previous version (if appcast was edited, re-run a live update after the change to confirm the new signature is accepted; clear `~/Library/Caches/com.<bundle-id>` if Sparkle cached a bad download).
 - [ ] Appcast shows the correct notes (single-version chunk), and artifact size looks sane.
 - [ ] GitHub release notes header is `<App> <version>` and body matches changelog bullets exactly.

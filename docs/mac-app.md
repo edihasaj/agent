@@ -2,6 +2,7 @@
 summary: "Scaffold checklist for a new macOS menu bar app with Sparkle updates"
 read_when:
   - Scaffolding a new macOS menu bar app with Sparkle.
+  - Packaging app-owned runtimes or background helpers.
 ---
 
 # New macOS App Scaffold (Sparkle + DevID + shared release flow)
@@ -36,6 +37,17 @@ This is a practical, minimal checklist to get a new macOS (SwiftPM) menubar app 
   - `check-release-assets.sh` thin wrapper that calls `check_assets` from shared lib.
   - `test_live_update.sh` (optional manual update smoke test, gated by `RUN_SPARKLE_UPDATE_TEST=1`).
 - Keep `version.env` as the single source for `MARKETING_VERSION` and `BUILD_NUMBER`.
+- Keep the installed app path, bundle identifier, and Developer ID team stable
+  across releases. Give each bundled interpreter a fixed, app-specific signing
+  identifier, such as `com.edihasaj.<appname>.runtime.node`.
+- Associate app-owned launchd jobs with the installed app through
+  `AssociatedBundleIdentifiers`. Confirm the executable and service actually
+  belong to that app before adding the association.
+- Standalone services use an Apple-issued signed interpreter at a fixed real
+  path outside versioned release folders. A Homebrew `opt` symlink alone does
+  not keep its resolved executable path stable.
+- Sign, notarize, and staple the app before creating distribution containers.
+  Verify the enclosed app in every ZIP and DMG before publishing.
 
 ## 5) Appcast
 - Create `appcast.xml` with an empty channel header:
@@ -66,6 +78,9 @@ This is a practical, minimal checklist to get a new macOS (SwiftPM) menubar app 
 - `spctl`, `codesign --verify --deep --strict`, `stapler validate` pass on the notarized app.
 - GH release has both zip and dSYM.
 - Previous build can update via Sparkle (optional but recommended for major releases).
+- A normal signed upgrade preserves the responsible app identity for existing
+  privacy permissions. Check the actual responsible process as well as the
+  signatures; matching bundle metadata alone does not prove attribution.
 
 ## 9) Common gotchas
 - Sparkle private key file must not contain comments or blank lines—scripts will fail fast.
