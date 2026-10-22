@@ -58,12 +58,25 @@ responsibility.
 
 ## Runtime differences
 
-The local Codex profile selects Qwen and its provider together. The installed
-Codex runtime failed a mixed-provider child test, so the named `implementer`
-coordinates Qwen through that separate profile process. Selecting only a default
-subagent model does not switch providers. Open a new chat after changing roles.
-The verifier's instructions prohibit edits. Check the actual permission mode
-because live parent overrides can supersede a role's sandbox default.
+How Qwen is reached depends on the parent chat's provider:
+
+| Parent chat | Qwen route | Sidebar |
+| --- | --- | --- |
+| Harness Gateway chat (`subscription_gateway`) | `workhorse` or `tester` role, or `spawn_agent` with model `qwen/qwen3.8-flash-next` | Yes |
+| Native ChatGPT chat | `implementer` runs the separate `spark-implementer` profile process | No |
+
+In a gateway chat, the `workhorse` and `tester` roles omit `model_provider`, so
+the child inherits the gateway provider and runs on Qwen. This was verified on
+22 October 2026: an Opus parent started a `workhorse` child, and its second Qwen
+request reused 67,200 of 70,303 prompt tokens from the cache. A native ChatGPT
+chat cannot reach the `qwen/` alias, and a role that pins a local provider still
+fails there, so keep `implementer` for those chats. Gateway prerequisites and
+diagnostics are in `manager/docs/codex-agents.md`.
+
+Open a new chat after changing roles; a running chat keeps the role list it
+started with. The verifier's instructions prohibit edits. Check the actual
+permission mode because live parent overrides can supersede a role's sandbox
+default.
 
 If native local-provider delegation is unavailable, use the existing local
 Codex worker with a bounded task. Claude Code's hosted implementer uses the
