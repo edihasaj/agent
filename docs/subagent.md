@@ -8,20 +8,22 @@ read_when:
 
 # Agent roles
 
-Qwen handles routine implementation and fixes. The larger hosted models define
-the solution, coordinate work, and review the result independently.
+Qwen does the legwork: research, context gathering, and routine implementation.
+It brings concise, evidenced findings back; the larger hosted models judge them,
+ask for more context when needed, make the decisions, and review independently.
 
 | Responsibility | Codex | Claude Code |
 | --- | --- | --- |
 | Orchestration and largest tasks | Astra | Fable |
-| Second-level work and independent verification | Sol | Opus 5.5 |
-| Routine implementation | Qwen | Qwen through the local Codex worker |
-| Qwen implementation fallback | Terra | Sonnet |
+| Independent verification | Sol (Opus when ChatGPT is at its limit) | Opus 5.5 |
+| Research, context and routine implementation | Qwen (`implementer`, `tester`) | Qwen through the local Codex worker |
+| Coding fallback | Sonnet (`fallback_implementer`) in gateway chats; Terra in native chats | Sonnet |
+| Parallel coding on another provider | Terra (`other_implementer`) | — |
 
 In Claude Code, Opus 5.5 also handles the largest-task fallback.
 
-Use the configured `orchestrator`, `implementer`, `verifier`, and
-`fallback_implementer` roles. Machine-specific provider configuration and
+Codex roles: `orchestrator`, `implementer`, `tester`, `fallback_implementer`,
+`other_implementer`, and `verifier`. Machine-specific provider configuration and
 canonical role files live in `manager/configs/`; their runbooks live in
 `manager/docs/`. Keep credentials in existing machine-local credential storage.
 Keep the parent on its orchestration model when invoking an implementation worker.
@@ -37,9 +39,11 @@ applicable repository instructions. Delegation does not require a separate
 terminal, an account switch, or a tmux farm.
 
 1. The orchestrator writes a bounded specification, acceptance checks, and file
-   ownership for each task.
-2. The implementer changes the assigned files, runs suitable checks, fixes
-   failures, and returns the actual results.
+   ownership for each coding task, or a question, where to look, and the
+   evidence wanted for each research task.
+2. The implementer answers with evidence, or changes the assigned files, runs
+   suitable checks, fixes failures, and returns the actual results. The
+   orchestrator judges whether more context is needed.
 3. A fresh verifier inspects the implementation against the specification and
    reports actionable defects or the available validation evidence.
 4. The orchestrator sends concrete defects back for correction and repeats
@@ -62,16 +66,18 @@ How Qwen is reached depends on the parent chat's provider:
 
 | Parent chat | Qwen route | Sidebar |
 | --- | --- | --- |
-| Harness Gateway chat (`subscription_gateway`) | `workhorse` or `tester` role, or `spawn_agent` with model `qwen/qwen3.8-flash-next` | Yes |
-| Native ChatGPT chat | `implementer` runs the separate `spark-implementer` profile process | No |
+| Harness Gateway chat (`subscription_gateway`) | `implementer` or `tester` role, or `spawn_agent` with model `qwen/qwen3.8-flash-next` | Yes |
+| Native ChatGPT chat | The main thread runs the separate `spark-implementer` profile process | No |
 
-In a gateway chat, the `workhorse` and `tester` roles omit `model_provider`, so
-the child inherits the gateway provider and runs on Qwen. This was verified on
-22 October 2026: an Opus parent started a `workhorse` child, and its second Qwen
-request reused 67,200 of 70,303 prompt tokens from the cache. A native ChatGPT
-chat cannot reach the `qwen/` alias, and a role that pins a local provider still
-fails there, so keep `implementer` for those chats. Gateway prerequisites and
-diagnostics are in `manager/docs/codex-agents.md`.
+In a gateway chat, `implementer`, `tester`, `fallback_implementer` (Sonnet) and
+`other_implementer` (Terra on the gateway's Codex account) omit `model_provider`,
+so each child inherits the gateway provider. This was verified on 22 October
+2026: an Opus parent started a Qwen role child, and its second Qwen request
+reused 67,200 of 70,303 prompt tokens from the cache. A native ChatGPT chat
+cannot reach the `qwen/`, `claude/` or `codex/` aliases, and a role that pins a
+local provider still fails there. In a native chat, run Qwen through the CLI
+profile below and start a coding fallback with model `gpt-5.6-terra`. Gateway
+prerequisites and diagnostics are in `manager/docs/codex-agents.md`.
 
 Open a new chat after changing roles; a running chat keeps the role list it
 started with. The verifier's instructions prohibit edits. Check the actual
