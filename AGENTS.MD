@@ -32,6 +32,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Contact: Edi Hasaj (@edihasaj, edihasaj@gmail.com).
 - “MacBook” / “Mac Studio” => SSH there; find hosts/IPs via `tailscale status`. If Tailscale/SSH is down or times out, try LAN discovery (`*.local`, `dns-sd -B _ssh._tcp local`, ARP/router leases), then retry SSH with `-o RequestTTY=no -o RemoteCommand=none`.
 - Files: repo or `~/Projects/agent`.
+- Agent scratch files, temporary checkouts/worktrees, and build/QA staging belong in a task-specific directory under `/tmp`, not macOS's default `/var/folders/.../T`. Choose the root explicitly (`mktemp -d /tmp/<task>.XXXXXX`, Python `tempfile.mkdtemp(dir="/tmp")`, or Node `mkdtemp("/tmp/<task>-")`); give child commands a `TMPDIR` inside that task directory. Clean up finished payloads after checking active use; preserve source changes and required receipts in their durable homes. Do not rely on the OS to clear temporary files.
 - “Make a note” => edit AGENTS.md (shortcut; not a blocker). Ignore runtime-specific mirror files unless explicitly requested.
 - No `./runner`.
 - Need upstream file: stage in `/tmp/`, then cherry-pick; never overwrite tracked.
