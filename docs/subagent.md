@@ -8,6 +8,10 @@ read_when:
 
 # Agent roles
 
+These roles are optional. Use the workflow below when they are configured;
+otherwise implement, test and review directly. Do not install roles or providers
+just to satisfy this guide.
+
 Qwen does the legwork: research, context gathering, and routine implementation.
 It brings concise, evidenced findings back; the larger hosted models judge them,
 ask for more context when needed, make the decisions, and review independently.
@@ -34,7 +38,7 @@ the historical Haiku launch recipe.
 
 ## Delegation workflow
 
-Edi authorizes Qwen delegation by default for bounded legwork. Use Qwen for
+When configured, delegate bounded legwork to Qwen by default. Use it for
 web and documentation searches, code exploration, log and configuration analysis,
 inventories, comparisons, summaries, context gathering, routine coding and test
 work. Keep credentials out of worker prompts and reports; existing permissions
@@ -54,8 +58,8 @@ performing broad searches or repeating the worker's reads.
    or changes the assigned files, runs
    suitable checks, fixes failures, and returns the actual results. The
    orchestrator judges whether more context is needed.
-3. A fresh verifier inspects the implementation against the specification and
-   reports actionable defects or the available validation evidence.
+3. Use a fresh verifier when configured; otherwise review the implementation
+   directly against the specification and validation evidence.
 4. The orchestrator sends concrete defects back for correction and repeats
    verification until significant defects are resolved.
 

@@ -108,10 +108,9 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Model routing
 
-- Edi authorizes Qwen delegation by default for bounded searches, web/documentation research, code exploration, log/config analysis, inventories, comparisons, summaries, context gathering, routine implementation and test work. Use the configured `implementer`/`tester` roles to keep this legwork off cloud models; the main model owns requirements, judgment, integration and final decisions. Keep tiny known commands local when a handoff would cost more than the work. Before delegating, read `docs/subagent.md` for runtime setup and coordination.
-- In Codex, start named workers with `fork_turns="none"`; a full-history fork inherits the parent model. Send a concise task and relevant paths instead of the parent's transcript. Do not use generic/explorer cloud children for work suited to Qwen.
-- Do not treat `pending_init`, a delayed reply or an unchanged diff during research as a startup failure. Check actual model/tool activity and request a bounded progress report before stopping a worker. Keep progressing workers on their task; use a cloud fallback only for an evidenced blocker, failure or stalled task, and state the reason. Explicit cancellation and changed task scope still take precedence.
-- For nontrivial implementation, define the specification and file ownership, delegate coding to `implementer`, require test evidence, and ask `verifier` for an independent review. Send concrete defects back for correction before handoff.
+- When configured, use Qwen (`implementer`/`tester`) for bounded search, research, routine coding and tests; otherwise work directly. Keep decisions in the main thread.
+- Give workers clear scope, owned files and checks. Use `verifier` when available for nontrivial changes; otherwise review directly. Codex: `fork_turns="none"` preserves role models.
+- Check activity before interrupting; `pending_init` alone is not failure. Fall back only for an evidenced blocker or stalled task. Details: `docs/subagent.md`.
 
 ## Language/Stack Notes
 - TypeScript: follow existing patterns.
