@@ -9,7 +9,9 @@ export async function loadPrivateConfig(path = process.env.AGENT_SEARCH_CONFIG |
   if (process.platform !== "win32" && (info.mode & 0o077 || info.uid !== process.getuid())) {
     throw new Error("Private search configuration must be owner-only (0600)");
   }
-  return JSON.parse(await readFile(path, "utf8"));
+  const text = await readFile(path, "utf8");
+  try { return JSON.parse(text); }
+  catch { throw new Error("Private search configuration must contain valid JSON"); }
 }
 
 export async function fetchPrivateResults(query, count, options = {}) {

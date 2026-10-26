@@ -37,7 +37,7 @@ API request. `--content` fetches result pages directly and adds no search calls.
 ./search.js "query" -n 3 --content     # Combined
 ./search.js "query" --profile code    # Code sources plus web engines
 ./search.js "query" --profile science # Academic and reference sources
-./search.js "query" --engines google,bing # Explicit engines, same shared limits
+./search.js "query" --engines duckduckgo,brave # Explicit engines, same shared limits
 ```
 
 The CLI accepts 1–20 results. The private API supports the first page and

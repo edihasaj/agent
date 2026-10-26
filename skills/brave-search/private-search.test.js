@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { fetchPrivateResults } from "./private-search.js";
 import { fetchSearchResults } from "./search.js";
+import { loadPrivateConfig } from "./private-search.js";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
 
 const config = { url: "https://search.example.org", token: "test-token-".repeat(8) };
 
@@ -67,4 +69,16 @@ test("private origins reject insecure transports, embedded credentials and paths
   for (const url of ["http://search.example.org", "https://user:pass@search.example.org", "https://search.example.org/path", "https://search.example.org/?token=x"]) {
     await assert.rejects(fetchPrivateResults("hello", 1, { config: { ...config, url } }), /HTTPS origin/);
   }
+});
+
+test("malformed configuration errors do not echo private file contents", async t => {
+  const directory = await mkdtemp('/tmp/agent-search-client-test-');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const path = directory + '/client.json';
+  await writeFile(path, '{"token":"synthetic-private-value" BROKEN}', { mode: 0o600 });
+  await assert.rejects(loadPrivateConfig(path), error => {
+    assert.equal(error.message, 'Private search configuration must contain valid JSON');
+    assert.ok(!error.message.includes('synthetic-private-value'));
+    return true;
+  });
 });
