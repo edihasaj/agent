@@ -67,21 +67,38 @@ compass_curl() {
 
 ## 1. Claim
 
+Before claiming, inspect any retained `$W/submission-attempt.json`,
+`submission-receipt.json`, and `report.json`. If they exist, read `$L/packet`
+first: a lost response may already have recorded completion, which would make
+a new claim fail. Reconcile matching recorded completion and its evidence,
+then clean up without reclaiming or clicking anything. Otherwise retain the
+attempt and follow the recovery instructions below. An unresolved attempt
+takes precedence over a new action, even if the approval changed.
+
 ```bash
 compass_curl -X POST "$L/claim" -o "$W/packet.json" || exit 0
 ```
 
 A failed claim means another run has it or the copy changed since approval: stop
-without reporting. Read `launch.action`, `launch.tab`, `site` (name, url, how,
-fields with limits), `values`, `link`, `assets`, and `rules`.
+without reporting. Read `launch.action`, `launch.tab`, `site` (including its
+`resume` policy and fields with limits), `values`, `link`, `assets`, `checklist`,
+`finish`, and `rules`.
+
+Before opening or rebuilding a form, resolve any retained attempt using the
+recovery instructions below before making another public mutation.
 
 ## 2. Open the form
 
 Runs close their form tab when they finish, so `launch.tab` is usually gone.
 If it is still open (an earlier run stopped for a sign-in or CAPTCHA), `abx
 live tab <launch.tab>` switches to it. Otherwise, or when abx says no open tab
-has that id, open the site in a new tab with `abx live newtab "<site.url>"` and
-continue the site's saved draft for this product. Both print the tab's id, and
+has that id, open the site in a new tab with `abx live newtab "<site.url>"`.
+Follow `site.resume`: with `rebuild`, restore the form from the approved packet;
+with `discover`, inspect the live site for an existing draft or listing first.
+Resume a matching draft when the site supports it. If no safe draft save exists,
+rebuild the form from Compass; never publish merely to save it. An existing
+public listing is a duplicate check, not permission to edit or submit it again:
+report its URL and ask the owner how to proceed. Both commands print the tab's id, and
 every later `abx live` command acts on that tab while it stays open, so other
 tabs in the agent Chrome never get in the way. Send the id as `"tab"` in every
 report.
@@ -121,7 +138,15 @@ Edi needs to take, then stop. Do not try to unlock the vault yourself.
   `abx live fill <selector> <text>`, `abx live select <selector> <value>`, and
   `abx live click`. Prefer selectors built from labels, names, or placeholders.
 - `link` is the product URL for every URL field. Do not change it.
-- Images: download each asset, then upload it to the matching input.
+- Override website imports with the approved product name, copy, link, and
+  images. Do not infer the product name from its operator or account email.
+- For a site's fixed tags or categories, use its current choices. Use an exact
+  packet match or a clearly equivalent truthful choice and disclose substitutions
+  in the report. Leave unsupported optional fields empty; ask when a required
+  choice is ambiguous. Do not invent pricing, licenses, platforms or launch dates.
+- Images: use only asset slots supported by the packet's site. Keep already
+  matching images; replace imported or unrelated media without appending duplicate
+  copies. Download missing assets, then upload them to the matching input.
 
   ```bash
   compass_curl "$COMPASS_URL<asset.url>" -o "$W/<asset.filename>"
@@ -129,7 +154,11 @@ Edi needs to take, then stop. Do not try to unlock the vault yourself.
   ```
 
   Use `assets.logo` for logo or thumbnail inputs and `assets.gallery`, in order,
-  for screenshots.
+  for screenshots. Upload gallery images one at a time, waiting for each to finish
+  before the next, then verify their count and order. Sites with no image slots,
+  such as Show HN, need no image upload. If the site's actual upload limits reject
+  the approved selection, report the limit and ask which assets to keep in Compass;
+  do not silently drop images or claim the whole selection was uploaded.
 - Prefer `abx live upload` over a file picker. If a native picker or another
   inaccessible control is required, use `guiport` in the verified agent Chrome
   window, then return to abx and check the resulting form. Use `shotport` first
@@ -142,9 +171,15 @@ Edi needs to take, then stop. Do not try to unlock the vault yourself.
 
 ## 4. Stop or submit
 
-With `fill`, follow the packet's `finish` steps: read back every field, the
-logo, and the gallery (count and order); make sure the site shows the draft as
-saved; then take the evidence and ask for confirmation:
+With `fill`, follow the packet's `finish` steps: read back every supported field,
+the logo, and the gallery (count and order). If the site offers a private draft
+save, verify it saved. If it has no safe save, leave it unsubmitted and explain
+in the report that the next run will rebuild from Compass. Take the evidence and
+ask for confirmation in either case. Never call a filled but unsaved form a
+saved site draft.
+
+Run these in sequence and check each result; a failed screenshot or evidence
+upload must not fall through to a confirm report:
 
 ```bash
 abx live screenshot --full "$W/filled.png"
@@ -153,24 +188,57 @@ compass_curl -X POST "$L/report" -H 'Content-Type: application/json' \
   -d '{"status":"needs_you","waiting_for":"confirm","tab":"<tab id>","detail":"Filled every field and uploaded 3 images."}'
 ```
 
-With `submit`, press the final button once, wait for the confirmation page, take a
-full-page screenshot, upload it as evidence, and report:
+With `submit`, first write `$W/submission-attempt.json` **before** the final
+button: include the launch id, approved hash, site, form URL and timestamp, but
+no credentials. If an attempt file already exists, recover it instead of
+clicking again. Press the final button once, then inspect the result. Record
+the observed outcome and listing/confirmation URL in
+`$W/submission-receipt.json` immediately, including an uncertain outcome when
+the click or response failed. Take a full-page screenshot and upload it as
+evidence. A failed capture or upload stops the reporting/cleanup sequence;
+preserve the receipt so recovery cannot repeat submission.
+
+Write the exact report body to `$W/report.json` before sending it, for example:
 
 ```bash
 compass_curl -X POST "$L/report" -H 'Content-Type: application/json' \
-  -d '{"status":"submitted","tab":"<tab id>","url":"<listing or confirmation URL>","detail":"Submitted. The site reviews new listings."}'
+  --data-binary @"$W/report.json"
 ```
 
+Use `submitted` when the site accepted the listing for moderation, or `live`
+only for a verified public listing. Do not infer submission from clicking alone.
+
+If a report response is lost or fails, retain `$W`, the exact report, and the
+receipt. Read `$L/packet` to see whether Compass already recorded completion.
+For a known successful submission, recover evidence upload and report only;
+never refill or click submit again. For an uncertain attempt, inspect the
+existing site listing or confirmation without another public click. If the
+outcome cannot be established, report `needs_you` / `problem` with the attempt
+details and stop. A later run must reconcile that attempt before proceeding.
+If the approval changed, ask the owner to reconcile the previous attempt rather
+than attributing an old result to the new copy. If Compass's current action or
+state rejects the retained completion report, ask for reconciliation rather
+than refilling or changing the approval. Retry Compass requests at most
+twice per run; stop with retained recovery files if the service remains down.
+
 Report `live` instead of `submitted` when the listing is already public. After
-Compass acknowledges the report, clean up.
+Compass acknowledges the report and its evidence upload, clean up. For a
+non-authentication review or completion report, confirm the screenshot belongs
+to this run; do not count an older screenshot as a successful upload.
 
 Clean up after every run that Compass acknowledged, including a `fill` that
-stops at confirm: close every tab this run opened, including the form tab, and
+stops at confirm: close this launch's form tab and every extra tab this run opened, and
 `trash "$W"`. The agent Chrome is a work surface; the owner reviews in Compass
-from the screenshot, and the site holds the saved draft and its images. Leave
+from the screenshot. A later run reopens a verified site draft or rebuilds the
+approved form from Compass according to `site.resume`. Leave
 the form tab open only for a `login`, `signup`, or `captcha` stop, where Edi
 has to act in that window. Keep `$W` only when the report failed or an upload
-is still pending. The worker archives the Paseo agent once it is idle.
+is still pending, or a submission attempt remains unresolved or uncertain,
+even after Compass acknowledges a `problem` report. A problem acknowledgement
+does not prove that the public click failed. Remove an attempt and its receipt
+only after a verified outcome and acknowledged completion, or explicit owner
+reconciliation authorizing a retry. The worker archives the Paseo agent once
+it is idle.
 
 ## When a person is needed
 
@@ -188,7 +256,8 @@ upload a screenshot when it helps, then stop:
 
 ## Site notes
 
-Forms change; read the page before acting.
+The same fill, review, submit and cleanup steps apply to every directory.
+Forms change; use the packet's checklist and read the current page before acting.
 
 - **Product Hunt**: submit from `/posts/new`. The flow has several steps and keeps
   a draft after the first one; in a `submit` run, continue that draft rather than
@@ -204,13 +273,23 @@ Forms change; read the page before acting.
   launch name back after the import. Leave the launch date for the owner and
   mention it in the confirm question; do not stop the fill to ask for it.
 - **Show HN**: `/submit` with title, URL (the packet link), and optional text.
-  No images. After submitting, the item URL is `/item?id=...`; report `live`.
-- **BetaList**: `/submit`. Choose the free queue, never paid expedite.
+  No images or server-side draft. Review in Compass, close the tab, then rebuild
+  from the approved packet during a submit run. After submitting, the item URL
+  is `/item?id=...`; report `live`.
+- **BetaList**: `/submit`. Use the existing product draft if available and
+  choose the free queue, never paid expedite. Submission to moderation is
+  `submitted`; use `live` only for a verified public listing.
 - **Uneed**: `/submit-a-tool` reads the website first. Replace the scraped name,
   tagline, and description with packet values. Choose the free queue.
-- **Microlaunch**: sign in, then open the launch form from the header.
-- **SaaSHub**: `/submit`. Listings are reviewed and verified later; report `submitted`.
+- **Microlaunch**: sign in, then open the launch form from the header. Reuse
+  an existing project or draft; do not create a second launch of the same product.
+- **SaaSHub**: `/submit`. Check for an existing product before adding one.
+  Listings are reviewed and verified later; report `submitted` after acceptance
+  into review, and `live` only for a verified public listing.
 - **AlternativeTo**: user menu, Suggest new application. Use the packet's platforms,
   pricing, and alternatives.
-- **DevHunt**: GitHub sign-in. Ask which launch week to pick.
-- **Peerlist**: needs a Peerlist profile; launches are weekly.
+- **DevHunt**: GitHub sign-in. Reuse a matching draft. Ask which launch week
+  to pick only when a required choice is absent from the approved packet.
+- **Peerlist**: needs a Peerlist profile; launches are weekly. Reuse an existing
+  project; adding a project and launching it are separate actions. Do not enter
+  a weekly launch during a fill run.
