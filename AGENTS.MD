@@ -108,8 +108,8 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Model routing
 
-- When configured, use Qwen (`implementer`/`tester`) for bounded search, research, routine coding and tests; otherwise work directly. Keep decisions in the main thread.
-- Give workers clear scope, owned files and checks. Use `verifier` when available for nontrivial changes; otherwise review directly. Codex: `fork_turns="none"` preserves role models.
+- When using profiles or subagents, prefer the configured primary worker for bounded search, research, routine coding and tests; otherwise work directly. Keep decisions in the main thread.
+- Give workers clear scope, owned files and checks. Use an independent reviewer when configured for nontrivial changes; otherwise review directly.
 - Check activity before interrupting; `pending_init` alone is not failure. Fall back only for an evidenced blocker or stalled task. Details: `docs/subagent.md`.
 
 ## Language/Stack Notes
