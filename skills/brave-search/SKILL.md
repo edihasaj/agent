@@ -5,9 +5,9 @@ description: Web search and page extraction through configured private SearXNG o
 
 # Web Search
 
-Use the existing search helper for web research. It selects private SearXNG when
-`~/.config/agent-search/client.json` exists; otherwise it retains the Brave API
-default. Page extraction works independently of either search provider.
+Use `agent-search` for web research. It delegates to the existing `search.js`
+and defaults to private SearXNG. Missing private configuration fails without
+calling a paid provider. Page extraction works independently of search.
 
 ## Setup
 
@@ -31,13 +31,12 @@ API request. `--content` fetches result pages directly and adds no search calls.
 ## Search
 
 ```bash
-./search.js "query"                    # Basic search (5 results)
-./search.js "query" -n 10              # More results
-./search.js "query" --content          # Include page content as markdown
-./search.js "query" -n 3 --content     # Combined
-./search.js "query" --profile code    # Code sources plus web engines
-./search.js "query" --profile science # Academic and reference sources
-./search.js "query" --engines duckduckgo,brave # Explicit engines, same shared limits
+agent-search "query"                    # Basic search (5 results)
+agent-search "query" -n 10               # More results
+agent-search "query" --content           # Include page content as markdown
+agent-search "query" --profile code      # Code sources plus web engines
+agent-search "query" --profile science   # Academic and reference sources
+agent-search "query" --engines duckduckgo,brave # Explicit engines, same shared limits
 ```
 
 The CLI accepts 1–20 results. The private API supports the first page and

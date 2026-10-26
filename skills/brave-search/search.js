@@ -11,14 +11,11 @@ const DEFAULT_API_URL = "https://api.search.brave.com/res/v1/web/search";
 const MAX_RETRIES = 3;
 
 export async function fetchSearchResults(query, numResults, options = {}) {
-	const selected = options.provider ?? process.env.SEARCH_PROVIDER;
+	const selected = options.provider ?? process.env.SEARCH_PROVIDER ?? "searxng";
 	if (selected === "brave") return fetchBraveResults(query, numResults, options);
-	if (selected && selected !== "searxng") throw new Error("Unknown search provider; choose searxng or brave");
+	if (selected !== "searxng") throw new Error("Unknown search provider; choose searxng or brave");
 	const config = options.config === undefined ? await loadPrivateConfig(options.configPath) : options.config;
-	const provider = selected ?? (config ? "searxng" : "brave");
-	if (provider === "brave") return fetchBraveResults(query, numResults, options);
-	if (provider === "searxng") return fetchPrivateResults(query, numResults, { ...options, config });
-	throw new Error("Unknown search provider; choose searxng or brave");
+	return fetchPrivateResults(query, numResults, { ...options, config });
 }
 
 function parseResetDelay(value) {

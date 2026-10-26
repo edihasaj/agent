@@ -8,6 +8,7 @@ import test from "node:test";
 const script = resolve("scripts/sync-agent-helpers.sh");
 const committer = resolve("bin/committer");
 const docsList = resolve("bin/docs-list");
+const agentSearch = resolve("bin/agent-search");
 
 function run(home, ...args) {
   return spawnSync("bash", [script, ...args], { encoding: "utf8", env: { ...process.env, HOME: home } });
@@ -23,6 +24,11 @@ test("helper sync installs committer into the user executable directory", (conte
   assert.equal(lstatSync(target).isSymbolicLink(), true);
   assert.equal(readlinkSync(target), committer);
   assert.equal(readlinkSync(join(home, ".local", "bin", "docs-list")), docsList);
+  const search = join(home, '.local', 'bin', 'agent-search');
+  assert.equal(readlinkSync(search), agentSearch);
+  const help = spawnSync(search, ['--help'], { encoding: 'utf8', cwd: home });
+  assert.equal(help.status, 0, help.stderr);
+  assert.match(help.stdout, /Usage: agent-search/);
   assert.equal(run(home, "--check").status, 0);
 });
 

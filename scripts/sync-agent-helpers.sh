@@ -15,7 +15,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 target_dir="$HOME/.local/bin"
 status=0
 
-for helper in committer docs-list; do
+for helper in committer docs-list agent-search; do
   source_path="$repo_root/bin/$helper"
   target_path="$target_dir/$helper"
 

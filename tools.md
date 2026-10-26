@@ -5,6 +5,7 @@ with `--help` for its current surface.
 
 | Need | Tool | Notes |
 | --- | --- | --- |
+| Web search | `agent-search` | Private SearXNG by default; paid providers require explicit selection |
 | Browser automation | `abx` | First choice for navigation, inspection, scraping, and local web tests |
 | Screenshots | `shotport` | Captures apps, desktop, browser output, and accessibility text |
 | macOS interaction | `guiport` | Finds, clicks, and types in visible applications |
@@ -46,6 +47,28 @@ trash <path>
 It runs the repository's own `docs:list` script with its package manager when
 present, otherwise its `bin/docs-list`, otherwise lists `docs/` with
 `read_when` hints. If there is no `docs/`, it reports that and exits 0.
+
+## Web search
+
+`agent-search` is the shared entry point for agent web research. It delegates
+to `skills/brave-search/search.js`; the historical skill path remains compatible.
+`scripts/sync-agent-helpers.sh` installs its link into `~/.local/bin`.
+
+```bash
+agent-search "query" -n 5
+agent-search "query" --profile code
+agent-search "query" --content
+```
+
+Private SearXNG is the default. Its endpoint and token come from the owner-only
+`~/.config/agent-search/client.json`, outside this public repository. Missing
+configuration or service errors do not switch to a paid provider.
+`--provider brave` explicitly selects the paid API and requires `BRAVE_API_KEY`.
+`SEARCH_PROVIDER` can explicitly select a provider for a process.
+
+Install the existing helper dependencies with
+`npm ci --prefix ~/Projects/agent/skills/brave-search` when needed. The skill's
+`content.js` still extracts known URLs without performing a search.
 
 ## Browser
 

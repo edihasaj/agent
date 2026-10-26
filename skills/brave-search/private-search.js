@@ -15,7 +15,7 @@ export async function loadPrivateConfig(path = process.env.AGENT_SEARCH_CONFIG |
 }
 
 export async function fetchPrivateResults(query, count, options = {}) {
-  const config = options.config ?? await loadPrivateConfig();
+  const config = options.config === undefined ? await loadPrivateConfig() : options.config;
   if (!config) throw new Error("Private search is not configured; install ~/.config/agent-search/client.json");
   let base;
   try { base = new URL(config.url); } catch { throw new Error("Invalid private search origin"); }

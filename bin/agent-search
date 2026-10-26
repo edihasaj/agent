@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  echo 'Usage: agent-search "query" [-n 1-20] [--content] [--profile web|code|science] [--engines names] [--provider searxng|brave]'
+  echo 'Uses private SearXNG by default. Paid Brave requires explicit selection.'
+  exit 0
+fi
+
+agent_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+exec node "$agent_root/skills/brave-search/search.js" "$@"

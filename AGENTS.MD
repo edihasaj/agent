@@ -131,6 +131,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 Before using a tool, read its section in `~/Projects/agent/tools.md` for commands, setup, and operating modes.
 
+- Web search: use `agent-search`, the shared search entry point in this repository.
 - Browser: always use `abx` first for navigation, inspection, interaction, scraping, and local web testing. Use the in-app Browser, Chrome connector, `chrome-devtools` MCP, or Playwright only when the user explicitly requests that browser/session, `abx` is unavailable, or it lacks the required capability. On failure, quote the exact error and retry once in the correct mode. Fallback order: `chrome-devtools` MCP, then `skills/browser-playwright-fallback`.
 - Live/production Chrome sessions: prefer the dedicated `chrome-agent` profile. Relaunching personal Chrome with `chrome-debug` requires explicit approval.
 - Desktop interaction: use `guiport` for clicking/typing in Mac apps; screenshot capture follows the Screenshots section.

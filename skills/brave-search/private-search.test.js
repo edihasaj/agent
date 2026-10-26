@@ -34,6 +34,14 @@ test("configured private search takes precedence over an available paid key", as
   assert.equal(calls, 1);
 });
 
+test("missing private configuration never defaults to paid search or another config file", async () => {
+  for (const options of [{ config: null }, { configPath: new URL('./nonexistent-client.json', import.meta.url) }]) {
+    let calls = 0;
+    await assert.rejects(fetchSearchResults('hello', 1, { ...options, apiKey: 'paid-key', fetchImpl: async () => { calls++; } }), /Private search is not configured/);
+    assert.equal(calls, 0);
+  }
+});
+
 test("private errors never call the paid provider or expose the body", async () => {
   let calls = 0;
   await assert.rejects(fetchSearchResults("hello", 1, { config, apiKey: "paid-key", fetchImpl: async () => {
