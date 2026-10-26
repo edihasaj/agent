@@ -135,10 +135,15 @@ Edi needs to take, then stop. Do not try to unlock the vault yourself.
   for a native-window capture, with an explicit output path under `$W`.
 - Read the values back with `abx live js` and compare them with the packet. Fix
   any difference before going on.
+- Follow every step in the packet's `checklist` (site steps learned from real
+  fills, such as Product Hunt's tags, imported media, and maker role). The packet
+  is newer than this file; when they differ, the packet wins.
 
 ## 4. Stop or submit
 
-With `fill`, take the evidence and ask for confirmation:
+With `fill`, follow the packet's `finish` steps: read back every field, the
+logo, and the gallery (count and order); make sure the site shows the draft as
+saved; then take the evidence and ask for confirmation:
 
 ```bash
 abx live screenshot --full "$W/filled.png"
@@ -156,10 +161,14 @@ compass_curl -X POST "$L/report" -H 'Content-Type: application/json' \
 ```
 
 Report `live` instead of `submitted` when the listing is already public. After
-Compass acknowledges the report, close only this launch's tab and use
-`trash "$W"` to clean up its scratch files. Keep the directory while waiting
-for the owner or when reporting fails: pending browser uploads can still need
-the original files. Continue and Submit now runs reuse the same directory.
+Compass acknowledges a `submitted` or `live` report, close this launch's tab.
+
+Clean up after every run that Compass acknowledged, including a `fill` that
+stops at confirm: close every tab this run opened except the form tab, and
+`trash "$W"`. The site holds the saved draft and its uploaded images, so a
+later Continue or Submit now run re-downloads from Compass if it needs them.
+Keep `$W` only when the report failed or an upload is still pending. The
+worker archives the Paseo agent once it is idle.
 
 ## When a person is needed
 
