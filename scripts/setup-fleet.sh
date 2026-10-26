@@ -109,7 +109,12 @@ if ! command -v pnpm >/dev/null 2>&1; then
 fi
 
 probeport_dir="$HOME/Projects/probeport"
-if [ -d "$probeport_dir/.git" ]; then
+# Where Wieldr is installed, Probeport is packaged in its release and
+# bin/probeport delegates to it; a separate checkout build is not needed.
+wieldr_probeport="${MISSION_RUNTIME_PRODUCTION_ROOT:-$HOME/.local/share/mission-runtime-production}/current/engines/bin/engine-cli"
+if [ -x "$wieldr_probeport" ]; then
+  echo "==> Probeport is packaged in the installed Wieldr release; skipping checkout build"
+elif [ -d "$probeport_dir/.git" ]; then
   if [ "$upgrade" = 1 ]; then
     if git -C "$probeport_dir" diff --quiet &&
       git -C "$probeport_dir" diff --cached --quiet; then
@@ -126,7 +131,7 @@ else
   git clone https://github.com/edihasaj/probeport.git "$probeport_dir"
 fi
 
-if [ -d "$probeport_dir" ]; then
+if [ ! -x "$wieldr_probeport" ] && [ -d "$probeport_dir" ]; then
   echo "==> building Probeport"
   (cd "$probeport_dir" && pnpm install --frozen-lockfile && pnpm build)
 fi

@@ -97,6 +97,11 @@ does not drop characters.
 
 ## End-to-end checks
 
+On a machine running Wieldr, `probeport` and `autoreview` execute the engines
+packaged in the current Wieldr release, so commands share its configuration,
+state, and evidence. Other machines fall back to the `~/Projects/probeport`
+checkout.
+
 Probeport drives browser, VM, desktop, and native gates, and collects evidence
 for its dashboard. Use the change flow for a specific app check and the explore
 flow for broad exploration:

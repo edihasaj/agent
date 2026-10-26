@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Where Wieldr is installed, Probeport is packaged in its release. Use that engine
+# so the command shares the deployment's configuration, state, and evidence.
+wieldr_cli="${MISSION_RUNTIME_PRODUCTION_ROOT:-$HOME/.local/share/mission-runtime-production}/current/engines/bin/engine-cli"
+if [ -z "${PROBEPORT_HOME:-}" ] && [ -x "$wieldr_cli" ]; then
+  exec "$wieldr_cli" probeport "$@"
+fi
+
 probeport_dir="${PROBEPORT_HOME:-$HOME/Projects/probeport}"
 probeport_cli="$probeport_dir/dist/src/cli.js"
 
