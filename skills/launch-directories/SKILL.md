@@ -143,7 +143,9 @@ Edi needs to take, then stop. Do not try to unlock the vault yourself.
 - For a site's fixed tags or categories, use its current choices. Use an exact
   packet match or a clearly equivalent truthful choice and disclose substitutions
   in the report. Leave unsupported optional fields empty; ask when a required
-  choice is ambiguous. Do not invent pricing, licenses, platforms or launch dates.
+  choice is ambiguous. Do not invent pricing, licenses, or platforms. For dates,
+  follow the packet's schedule: an explicit date must match the live picker;
+  `first_available` means choose the first enabled free slot during a submit run.
 - Images: use only asset slots supported by the packet's site. Keep already
   matching images; replace imported or unrelated media without appending duplicate
   copies. Download missing assets, then upload them to the matching input.
@@ -270,8 +272,14 @@ Forms change; use the packet's checklist and read the current page before acting
   social card from the website; replace them so the logo and gallery are exactly
   the packet's images in packet order. Choose **I made this** in Launch Team.
   Product Hunt prefills names from the site's structured data, so read the
-  launch name back after the import. Leave the launch date for the owner and
-  mention it in the confirm question; do not stop the fill to ask for it.
+  launch name back after the import. During `fill`, describe the schedule policy
+  in the confirm report without scheduling anything. During `submit`, honor
+  `schedule.date` if supplied; if blank or `schedule.mode` is `first_available`,
+  select the first enabled free date offered by Product Hunt without asking.
+  Product Hunt uses Pacific time; read the actual date and timezone back before
+  the final scheduling button, and record both in the receipt and Compass report.
+  If an explicit requested date is unavailable, ask rather than silently change
+  it. Never choose a paid boost or pay to get an earlier slot.
 - **Show HN**: `/submit` with title, URL (the packet link), and optional text.
   No images or server-side draft. Review in Compass, close the tab, then rebuild
   from the approved packet during a submit run. After submitting, the item URL
