@@ -77,12 +77,14 @@ fields with limits), `values`, `link`, `assets`, and `rules`.
 
 ## 2. Open the form
 
-If `launch.tab` is set, an earlier run left the form open: `abx live tab
-<launch.tab>` switches to it. Otherwise, or when abx says no open tab has that
-id, open the site in a new tab with `abx live newtab "<site.url>"`. Both print
-the tab's id, and every later `abx live` command acts on that tab while it stays
-open, so other tabs in the agent Chrome never get in the way. Send the id as
-`"tab"` in every report, so the next run continues in the same tab.
+Runs close their form tab when they finish, so `launch.tab` is usually gone.
+If it is still open (an earlier run stopped for a sign-in or CAPTCHA), `abx
+live tab <launch.tab>` switches to it. Otherwise, or when abx says no open tab
+has that id, open the site in a new tab with `abx live newtab "<site.url>"` and
+continue the site's saved draft for this product. Both print the tab's id, and
+every later `abx live` command acts on that tab while it stays open, so other
+tabs in the agent Chrome never get in the way. Send the id as `"tab"` in every
+report.
 
 Run `abx live snapshot`. If the site shows a sign-in wall, use the sign-in flow
 below. Follow the site note to reach the submission form. After selecting the
@@ -92,8 +94,7 @@ task may have navigated it. If it is on an unrelated site, open the packet's
 site in a fresh tab instead of changing that other task's page.
 
 In a `submit` run, first compare the form's values with the packet. If they
-differ, or the earlier tab was gone, fill again with the same packet (or open the
-site's saved draft) before submitting.
+differ, fix them with the same packet before submitting.
 
 ### Sign in with 1Password
 
@@ -161,14 +162,15 @@ compass_curl -X POST "$L/report" -H 'Content-Type: application/json' \
 ```
 
 Report `live` instead of `submitted` when the listing is already public. After
-Compass acknowledges a `submitted` or `live` report, close this launch's tab.
+Compass acknowledges the report, clean up.
 
 Clean up after every run that Compass acknowledged, including a `fill` that
-stops at confirm: close every tab this run opened except the form tab, and
-`trash "$W"`. The site holds the saved draft and its uploaded images, so a
-later Continue or Submit now run re-downloads from Compass if it needs them.
-Keep `$W` only when the report failed or an upload is still pending. The
-worker archives the Paseo agent once it is idle.
+stops at confirm: close every tab this run opened, including the form tab, and
+`trash "$W"`. The agent Chrome is a work surface; the owner reviews in Compass
+from the screenshot, and the site holds the saved draft and its images. Leave
+the form tab open only for a `login`, `signup`, or `captcha` stop, where Edi
+has to act in that window. Keep `$W` only when the report failed or an upload
+is still pending. The worker archives the Paseo agent once it is idle.
 
 ## When a person is needed
 
