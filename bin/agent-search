@@ -8,4 +8,4 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
 fi
 
 agent_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-exec node "$agent_root/skills/brave-search/search.js" "$@"
+exec node "$agent_root/skills/web-search/search.js" "$@"

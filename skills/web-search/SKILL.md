@@ -1,5 +1,5 @@
 ---
-name: brave-search
+name: web-search
 description: Web search and page extraction through configured private SearXNG or the Brave Search API. Use for finding documentation, facts, and current web sources. No browser required.
 ---
 
@@ -14,7 +14,7 @@ calling a paid provider. Page extraction works independently of search.
 Run once before first use:
 
 ```bash
-cd ~/Projects/agent/skills/brave-search
+cd ~/Projects/agent/skills/web-search
 npm ci
 ```
 

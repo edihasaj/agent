@@ -1,8 +1,8 @@
 {
-	"name": "brave-search",
+	"name": "web-search",
 	"version": "1.0.0",
 	"type": "module",
-	"description": "Headless web search via Brave Search - no browser required",
+	"description": "Headless web search through private SearXNG or explicitly selected Brave",
 	"author": "Mario Zechner",
 	"license": "MIT",
 	"scripts": {

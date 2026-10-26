@@ -51,7 +51,7 @@ present, otherwise its `bin/docs-list`, otherwise lists `docs/` with
 ## Web search
 
 `agent-search` is the shared entry point for agent web research. It delegates
-to `skills/brave-search/search.js`; the historical skill path remains compatible.
+to the canonical `skills/web-search/search.js` implementation.
 `scripts/sync-agent-helpers.sh` installs its link into `~/.local/bin`.
 
 ```bash
@@ -67,7 +67,7 @@ configuration or service errors do not switch to a paid provider.
 `SEARCH_PROVIDER` can explicitly select a provider for a process.
 
 Install the existing helper dependencies with
-`npm ci --prefix ~/Projects/agent/skills/brave-search` when needed. The skill's
+`npm ci --prefix ~/Projects/agent/skills/web-search` when needed. The skill's
 `content.js` still extracts known URLs without performing a search.
 
 ## Browser
