@@ -74,9 +74,10 @@ Explicit cancellation and changed scope still permit stopping a worker.
 Automatic delegation and task-based fallback are instruction policies;
 they do not guarantee that every task follows a fixed state machine.
 
-Keep independent tasks parallel. In Codex, start named workers with
-`fork_turns="none"`: a full-history fork inherits the parent's model instead of
-the role's model. Do not launch an orchestrator child or a generic/explorer cloud
+Keep independent tasks parallel. Prefer fresh worker tasks to keep prompts
+small; in Codex this is `fork_turns="none"`. Current MultiAgentV2 applies a named
+role's model even with a full-history fork. Use shared history when needed.
+Do not launch an orchestrator child or a generic/explorer cloud
 child for Qwen-suitable legwork. Pass the specification and necessary evidence without
 unrelated parent history. Parallel workers must own different files. Workers
 should not delegate further unless the orchestrator explicitly assigns that
