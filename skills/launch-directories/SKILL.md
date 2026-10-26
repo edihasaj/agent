@@ -181,7 +181,17 @@ Forms change; read the page before acting.
 
 - **Product Hunt**: submit from `/posts/new`. The flow has several steps and keeps
   a draft after the first one; in a `submit` run, continue that draft rather than
-  starting a new product. Topics come from its suggestions. Ask for the launch date.
+  starting a new product. In any run, open an existing in-progress draft for the
+  same product instead of starting another. Launch tags come only from Product
+  Hunt's own list, three at most: use each packet topic that matches, and replace
+  one with no match (such as "Machine Learning") by the closest broad tag that
+  exists (Artificial Intelligence, Developer Tools, API); name every substitution
+  in the confirm report instead of stopping. Product Hunt imports a logo and a
+  social card from the website; replace them so the logo and gallery are exactly
+  the packet's images in packet order. Choose **I made this** in Launch Team.
+  Product Hunt prefills names from the site's structured data, so read the
+  launch name back after the import. Leave the launch date for the owner and
+  mention it in the confirm question; do not stop the fill to ask for it.
 - **Show HN**: `/submit` with title, URL (the packet link), and optional text.
   No images. After submitting, the item URL is `/item?id=...`; report `live`.
 - **BetaList**: `/submit`. Choose the free queue, never paid expedite.
