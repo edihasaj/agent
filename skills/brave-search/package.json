@@ -6,7 +6,7 @@
 	"author": "Mario Zechner",
 	"license": "MIT",
 	"scripts": {
-		"test": "node --test search.test.js"
+		"test": "node --test *.test.js"
 	},
 	"dependencies": {
 		"@mozilla/readability": "^0.6.0",

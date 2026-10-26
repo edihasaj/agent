@@ -1,11 +1,13 @@
 ---
 name: brave-search
-description: Web search and content extraction via Brave Search API. Use for searching documentation, facts, or any web content. Lightweight, no browser required.
+description: Web search and page extraction through configured private SearXNG or the Brave Search API. Use for finding documentation, facts, and current web sources. No browser required.
 ---
 
-# Brave Search
+# Web Search
 
-Headless web search through the official Brave Search API plus direct page content extraction. No browser required.
+Use the existing search helper for web research. It selects private SearXNG when
+`~/.config/agent-search/client.json` exists; otherwise it retains the Brave API
+default. Page extraction works independently of either search provider.
 
 ## Setup
 
@@ -16,9 +18,15 @@ cd ~/Projects/agent/skills/brave-search
 npm ci
 ```
 
-Needs env: `BRAVE_API_KEY`.
+Private SearXNG uses an owner-only (0600) client JSON file containing `url`
+(the HTTPS origin) and `token`. `AGENT_SEARCH_CONFIG` can select another file.
+Keep this file outside repositories. Do not read or print its credential.
+`SEARCH_PROVIDER=searxng|brave` or `--provider` explicitly selects a provider.
 
-Each `search.js` invocation makes one billable Brave Search API request. `--content` fetches result pages directly and does not add Brave API requests.
+Private searches use the shared cache and rotate available engines. Failures
+never trigger paid Brave fallback. Use `--provider brave` only when paid search
+is appropriate for the request; it requires `BRAVE_API_KEY` and makes a billable
+API request. `--content` fetches result pages directly and adds no search calls.
 
 ## Search
 
@@ -27,9 +35,17 @@ Each `search.js` invocation makes one billable Brave Search API request. `--cont
 ./search.js "query" -n 10              # More results
 ./search.js "query" --content          # Include page content as markdown
 ./search.js "query" -n 3 --content     # Combined
+./search.js "query" --profile code    # Code sources plus web engines
+./search.js "query" --profile science # Academic and reference sources
+./search.js "query" --engines google,bing # Explicit engines, same shared limits
 ```
 
-The CLI accepts 1-20 results and retries transient `429` responses using Brave's rate-limit reset header.
+The CLI accepts 1–20 results. The private API supports the first page and
+rejects engine-selection bangs in query text; use `--engines` instead. Respect
+its returned retry delay when all selected engines are busy or cooling down.
+Broaden a sparse search or select another relevant profile rather than
+repeating an unchanged query. The paid Brave mode retries transient `429`
+responses using Brave's reset header.
 
 ## Extract Page Content
 

@@ -5,9 +5,21 @@ import { JSDOM } from "jsdom";
 import { pathToFileURL } from "node:url";
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
+import { fetchPrivateResults, loadPrivateConfig } from "./private-search.js";
 
 const DEFAULT_API_URL = "https://api.search.brave.com/res/v1/web/search";
 const MAX_RETRIES = 3;
+
+export async function fetchSearchResults(query, numResults, options = {}) {
+	const selected = options.provider ?? process.env.SEARCH_PROVIDER;
+	if (selected === "brave") return fetchBraveResults(query, numResults, options);
+	if (selected && selected !== "searxng") throw new Error("Unknown search provider; choose searxng or brave");
+	const config = options.config === undefined ? await loadPrivateConfig(options.configPath) : options.config;
+	const provider = selected ?? (config ? "searxng" : "brave");
+	if (provider === "brave") return fetchBraveResults(query, numResults, options);
+	if (provider === "searxng") return fetchPrivateResults(query, numResults, { ...options, config });
+	throw new Error("Unknown search provider; choose searxng or brave");
+}
 
 function parseResetDelay(value) {
 	const seconds = Number.parseFloat(value?.split(",")[0] ?? "");
@@ -112,6 +124,15 @@ async function fetchPageContent(url) {
 
 async function main() {
 	const args = process.argv.slice(2);
+	const options = {};
+	for (const name of ["provider", "profile", "engines"]) {
+		const index = args.indexOf("--" + name);
+		if (index !== -1) {
+			if (!args[index + 1] || args[index + 1].startsWith("--")) throw new Error("Missing --" + name + " value");
+			options[name] = args[index + 1];
+			args.splice(index, 2);
+		}
+	}
 	const contentIndex = args.indexOf("--content");
 	const fetchContent = contentIndex !== -1;
 	if (fetchContent) args.splice(contentIndex, 1);
@@ -125,7 +146,7 @@ async function main() {
 
 	const query = args.join(" ");
 	if (!query || !Number.isInteger(numResults) || numResults < 1 || numResults > 20) {
-		console.log("Usage: search.js <query> [-n <1-20>] [--content]");
+		console.log("Usage: search.js <query> [-n <1-20>] [--content] [--provider searxng|brave] [--profile web|code|science] [--engines names]");
 		console.log("\nOptions:");
 		console.log("  -n <num>    Number of results, 1-20 (default: 5)");
 		console.log("  --content   Fetch readable content as markdown");
@@ -133,7 +154,7 @@ async function main() {
 		return;
 	}
 
-	const results = await fetchBraveResults(query, numResults);
+	const results = await fetchSearchResults(query, numResults, options);
 	
 	if (results.length === 0) {
 		console.error("No results found.");
