@@ -1,6 +1,6 @@
 ---
 name: launch-directories
-description: Fill and submit launch-site listings from Compass using the real agent Chrome, guiport for native controls, and 1Password browser autofill for existing accounts. Use for Product Hunt, Show HN, BetaList, Uneed, Microlaunch, SaaSHub, AlternativeTo, DevHunt, or Peerlist submissions. Use the approved copy and images; publish only after Compass's Submit now action.
+description: Fill and submit launch-site listings from Compass using the real agent Chrome, guiport for native controls, and 1Password browser autofill for existing accounts. Use for Product Hunt, Show HN, Uneed, Microlaunch, SaaSHub, AlternativeTo, DevHunt, or Peerlist submissions. Use the approved copy and images; publish only after Compass's Submit now action.
 ---
 
 # Launch-site submissions
@@ -284,9 +284,6 @@ Forms change; use the packet's checklist and read the current page before acting
   No images or server-side draft. Review in Compass, close the tab, then rebuild
   from the approved packet during a submit run. After submitting, the item URL
   is `/item?id=...`; report `live`.
-- **BetaList**: `/submit`. Use the existing product draft if available and
-  choose the free queue, never paid expedite. Submission to moderation is
-  `submitted`; use `live` only for a verified public listing.
 - **Uneed**: `/submit-a-tool` reads the website first. Replace the scraped name,
   tagline, and description with packet values. Choose the free queue.
 - **Microlaunch**: sign in, then open the launch form from the header. Reuse
