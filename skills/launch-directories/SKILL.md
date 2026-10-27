@@ -1,6 +1,6 @@
 ---
 name: launch-directories
-description: Fill and submit launch-site listings from Compass using the real agent Chrome, guiport for native controls, and 1Password browser autofill for existing accounts. Use for Product Hunt, Show HN, Uneed, Microlaunch, SaaSHub, AlternativeTo, DevHunt, or Peerlist submissions. Use the approved copy and images; publish only after Compass's Submit now action.
+description: Fill and submit launch-site listings from Compass using the real agent Chrome, guiport for native controls, and 1Password browser autofill for existing accounts. Use for Product Hunt, Show HN, Uneed, Microlaunch, SaaSHub, AlternativeTo, or Peerlist submissions. Use the approved copy and images; publish only after Compass's Submit now action.
 ---
 
 # Launch-site submissions
@@ -293,8 +293,6 @@ Forms change; use the packet's checklist and read the current page before acting
   into review, and `live` only for a verified public listing.
 - **AlternativeTo**: user menu, Suggest new application. Use the packet's platforms,
   pricing, and alternatives.
-- **DevHunt**: GitHub sign-in. Reuse a matching draft. Ask which launch week
-  to pick only when a required choice is absent from the approved packet.
 - **Peerlist**: needs a Peerlist profile; launches are weekly. Reuse an existing
   project; adding a project and launching it are separate actions. Do not enter
   a weekly launch during a fill run.
