@@ -1,5 +1,5 @@
 ---
-summary: 'Qwen-first search, research, implementation and testing, with cloud decisions, independent verification and evidenced fallbacks.'
+summary: 'Local-first research, implementation, testing and preliminary review, with cloud decisions and independent final verification.'
 read_when:
   - Configuring Codex or Claude model roles and coding fallbacks.
   - Delegating implementation or coordinating independent verification.
@@ -12,15 +12,17 @@ These roles are optional. Use the workflow below when they are configured;
 otherwise implement, test and review directly. Do not install roles or providers
 just to satisfy this guide.
 
-Qwen does the legwork: research, context gathering, and routine implementation.
-It brings concise, evidenced findings back; the larger hosted models judge them,
-ask for more context when needed, make the decisions, and review independently.
+The configured local worker does research, context gathering, routine implementation,
+and first-pass verification or review. It returns concise evidence and uncertainties;
+the main model makes decisions. Larger models handle difficult diagnosis and
+independent final review of nontrivial or risky changes.
 
 | Responsibility | Codex | Claude Code |
 | --- | --- | --- |
 | Orchestration and largest tasks | Astra | Fable |
-| Independent verification | Sol (Opus when ChatGPT is at its limit) | Opus 5.5 |
-| Research, context and routine implementation | Qwen (`implementer`, `tester`) | Qwen through the local Codex worker |
+| First-pass research, checks and review | Fresh Qwen `implementer` or `tester` | Qwen through a fresh `implementer` handoff |
+| Independent final review of nontrivial or risky changes | Sol (Opus when ChatGPT is at its limit) | Opus 5.5 |
+| Context and routine implementation | Qwen `implementer` | Qwen through the local Codex worker |
 | Coding fallback | Sonnet (`fallback_implementer`) in gateway chats; Terra in native chats | Sonnet |
 | Parallel coding on another provider | Terra (`other_implementer`) | — |
 
@@ -40,8 +42,8 @@ the historical Haiku launch recipe.
 
 When configured, delegate bounded legwork to Qwen by default. Use it for
 web and documentation searches, code exploration, log and configuration analysis,
-inventories, comparisons, summaries, context gathering, routine coding and test
-work. Keep credentials out of worker prompts and reports; existing permissions
+inventories, comparisons, summaries, context gathering, routine coding, test work,
+small acceptance checks, failure reproduction and preliminary diff review. Keep credentials out of worker prompts and reports; existing permissions
 and authorization for sensitive actions still apply. The main model defines the
 question and makes decisions from the returned evidence. Tiny known commands can
 stay in the main thread when delegation would add more overhead than the work.
@@ -58,10 +60,20 @@ performing broad searches or repeating the worker's reads.
    or changes the assigned files, runs
    suitable checks, fixes failures, and returns the actual results. The
    orchestrator judges whether more context is needed.
-3. Use a fresh verifier when configured; otherwise review the implementation
-   directly against the specification and validation evidence.
+3. Use a fresh local worker for bounded review or verification. Require concrete
+   findings with file/line references, failure scenarios and observed checks;
+   review-only tasks make no edits. Small, low-risk changes can finish after the
+   main model checks that evidence. For nontrivial or risky changes, send the
+   specification, diff, local findings and unresolved questions to an independent
+   verifier when configured; otherwise perform that final review directly.
 4. The orchestrator sends concrete defects back for correction and repeats
    verification until significant defects are resolved.
+
+The author does not approve its own patch. A fresh worker may use the same local
+model, but its review needs separate context. A local pass is preliminary evidence,
+not a substitute for independent final review where required. Do not add a cloud
+reviewer merely to repeat a completed bounded check. Skip the local pass when the
+user requests a particular reviewer or local availability blocks progress.
 
 Keep Qwen on tasks it can complete. Use the hosted implementation fallback only
 when the endpoint is unavailable, an evidenced blocker or stalled task prevents
@@ -105,7 +117,9 @@ prerequisites and diagnostics are in `manager/docs/codex-agents.md`.
 Open a new chat after changing roles; a running chat keeps the role list it
 started with. The verifier's instructions prohibit edits. Check the actual
 permission mode because live parent overrides can supersede a role's sandbox
-default.
+default. Review-only instructions on a shared coding/testing role do not change
+its sandbox. Native review workers use `--sandbox read-only`; gateway workers
+retain the caller's permission boundary and must follow the no-edit assignment.
 
 In a native Codex chat, use the existing local Codex worker with a bounded task:
 
