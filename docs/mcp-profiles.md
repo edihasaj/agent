@@ -22,6 +22,7 @@ owned launcher. Keep secrets in machine-local environment files, never Git.
 - `atlassian` -> `mcp-remote@0.1.38` to `https://mcp.atlassian.com/v1/mcp/authv2` using Streamable HTTP only (Jira + Confluence; OAuth browser login; endpoint-specific DCR/token state cached in `~/.mcp-auth`, so migrating from `/v1/sse` requires one fresh login and leaves the old cache entry unused)
 - `stripe` -> `mcp-remote@0.1.38` to `https://mcp.stripe.com` (Stripe hosted remote MCP with OAuth 2.1 browser login and tokens cached in `~/.mcp-auth`; no API key). Stripe's OAuth server only supports the `mcp` scope, so the profile passes `--static-oauth-client-metadata '{"scope":"mcp"}'` — without it mcp-remote's default `openid/email/profile` scopes are rejected and login fails.
 - `guiport` -> `guiport serve --mcp`
+- `1password` -> the macOS 1Password `1password-mcp` binary (on-demand; interactive Environments fallback)
 
 ## Never launch a stdio server through `npx`
 
@@ -94,6 +95,14 @@ not `set -eu` clean (google-cloud-sdk's `path.zsh.inc` dies on an unbound `$1`),
 which otherwise kills the launcher before the server starts.
 
 Private/org-specific profiles (and their setup notes) live in the private overlay `~/Projects/manager/scripts/mcp/agent-mcp-private`; the launcher delegates to it automatically when the profile is defined there.
+
+### 1Password
+
+`1password` is on-demand and reads **1Password Environments only**; it cannot
+read vault items. The 1Password app must be unlocked, and the responsible
+agent host (Harness Gateway) needs macOS Full Disk Access on every Mac that
+runs it. Use the `op` workflow for vault items; this MCP is the interactive
+fallback when `op` cannot reach the vault.
 
 ## Managed registrations
 

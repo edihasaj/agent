@@ -20,6 +20,7 @@ Profiles:
   atlassian        Atlassian (Jira + Confluence) remote MCP via mcp-remote (OAuth browser login)
   stripe           Stripe hosted remote MCP via mcp-remote (OAuth browser login)
   guiport          macOS desktop automation MCP
+  1password        1Password Environments MCP (macOS; interactive fallback)
 
 Secrets stay machine-local. Put env exports in ~/.profile or ~/.zprofile.
 Private/org-specific profiles live in ~/Projects/manager/scripts/mcp/agent-mcp-private.
@@ -108,6 +109,21 @@ case "$PROFILE" in
 
   guiport)
     exec guiport serve --mcp
+    ;;
+
+  1password)
+    if [[ "$(uname -s)" != "Darwin" ]]; then
+      echo "agent-mcp 1password: 1password-mcp is available only on macOS." >&2
+      exit 69
+    fi
+    if [[ -x "/Applications/1Password.app/Contents/MacOS/1password-mcp" ]]; then
+      exec /Applications/1Password.app/Contents/MacOS/1password-mcp
+    fi
+    if ONEPASSWORD_MCP_BIN="$(command -v 1password-mcp 2>/dev/null)"; then
+      exec "$ONEPASSWORD_MCP_BIN"
+    fi
+    echo "agent-mcp 1password: 1password-mcp is missing. Install 1Password for macOS or expose 1password-mcp on PATH." >&2
+    exit 69
     ;;
 
   *)

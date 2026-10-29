@@ -6,7 +6,7 @@ metadata: {"emoji":"🔐","requires":{"bins":["op"]},"install":[{"id":"brew","ki
 
 # 1Password
 
-## Preferred: Environments over MCP (interactive)
+## Environments MCP (interactive)
 
 Secret values never enter agent context. Needs the desktop app running and unlocked; for
 unattended jobs or plain vault items, use the CLI workflow below.
@@ -23,6 +23,15 @@ unattended jobs or plain vault items, use the CLI workflow below.
 5. `append_variables` requires `concealed` (true for secrets). Secret values are entered by the
    owner in the app or piped by a command, never passed through the agent. Environments are
    deleted in the app (no MCP tool).
+
+## Fallback order
+
+1. Use service-account `op` for shared vaults and unattended jobs.
+2. Use desktop-app `op` in tmux for Personal vault items.
+3. Use the `1password-mcp` Environments flow: `authenticate` →
+   `list_environments` → `list_variables` → `create_local_env_file`, mounted
+   under a task-specific `/tmp` directory, consumed by a command, and never
+   printed.
 
 ## CLI (unattended or vault items)
 
@@ -141,3 +150,10 @@ tmux -S "$SOCKET" kill-session -t "$SESSION"
   `op daemon` behind and spends another service-account request. A service-account call
   that stays slow with the network healthy is usually rate limiting; check it once with
   `op service-account ratelimit` inside the same tmux session.
+
+## Troubleshooting
+
+- `op` reporting `no account found`, or `1password-mcp` reporting `Failed to
+  start logger`, means the responsible app (Harness Gateway) lacks Full Disk
+  Access. Grant it Full Disk Access; never bypass this through launchd or by
+  re-signing.
