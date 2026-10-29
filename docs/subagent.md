@@ -33,6 +33,7 @@ Codex roles: `orchestrator`, `implementer`, `tester`, `fallback_implementer`,
 canonical role files live in `manager/configs/`; their runbooks live in
 `manager/docs/`. Keep credentials in existing machine-local credential storage.
 Keep the parent on its orchestration model when invoking an implementation worker.
+Do not classify broken status delivery or an explicit hold as model failure.
 
 Claude Code's current reusable roles and model routing are documented in
 `~/Projects/manager/docs/claude-agents.md`. Do not override those defaults with
@@ -82,6 +83,16 @@ reason and preserve valid work. `pending_init`, silence alone, and an unchanged
 diff during research do not establish failure. Check recent model/tool activity
 and ask for a bounded progress report before interrupting; let progressing work
 finish. Use bounded waits rather than duplicate workers or indefinite retries.
+An explicit hold, worktree move, dependency wait or read-only assignment is not
+an implementation attempt. Pause the task budget while held. Resume explicitly
+with the current path, owned files and acceptance check before expecting edits.
+An unsupported status/messaging call is a coordination failure, not model
+incapability: inspect available activity/history or the final report and address
+the transport separately. Do not repeatedly request the broken channel and
+escalate because it stays silent. For routine-work escalation, state the bounded
+task, authorization/resume state, latest successful activity, exact failing
+check/blocker and focused correction. A complex project or extra parallelism
+alone does not justify moving every bounded implementation task to cloud models.
 Explicit cancellation and changed scope still permit stopping a worker.
 Automatic delegation and task-based fallback are instruction policies;
 they do not guarantee that every task follows a fixed state machine.
