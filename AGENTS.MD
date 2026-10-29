@@ -108,6 +108,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 
 ## Model routing
 
+- For paid OpenRouter work, default to the DeepSeek V4 Flash family. Bigger-model work uses suitable Claude/Codex subscriptions first. DeepSeek Pro and every GLM variant require a task-specific capability Flash cannot provide and confirmed unavailability or inability of suitable subscriptions. General OpenRouter permission, busy Qwen, parallelism or a transient tool error does not select Pro/GLM; unknown quota does not prove unavailability. Preserve explicit user model choices and existing worker models.
 - When using profiles or subagents, prefer the configured primary worker for bounded research, routine coding, tests and first-pass verification or review; otherwise work directly. Keep decisions in the main thread.
 - Give workers clear scope, owned files and checks. Use a fresh worker for review; follow local checks with an independent reviewer when configured for nontrivial or risky changes, otherwise review directly.
 - Check activity before interrupting; `pending_init` alone is not failure. Fall back only for an evidenced blocker or stalled task. Details: `docs/subagent.md`.

@@ -35,6 +35,14 @@ canonical role files live in `manager/configs/`; their runbooks live in
 Keep the parent on its orchestration model when invoking an implementation worker.
 Do not classify broken status delivery or an explicit hold as model failure.
 
+Paid OpenRouter fallback uses the DeepSeek V4 Flash family by default. Bigger
+tasks use suitable Claude/Codex subscriptions first. DeepSeek Pro and every GLM
+variant require both a capability Flash cannot provide and confirmed
+unavailability or inability of suitable subscriptions. State both reasons before
+selecting that exception. General OpenRouter permission, busy Qwen, parallelism
+or a transient tool error does not select those models. Unknown quota is not
+proof of unavailability. Preserve explicit user choices and existing worker models.
+
 Claude Code's current reusable roles and model routing are documented in
 `~/Projects/manager/docs/claude-agents.md`. Do not override those defaults with
 the historical Haiku launch recipe.
