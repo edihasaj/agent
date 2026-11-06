@@ -123,7 +123,7 @@ to avoid loading unused tools in every session.
 ~/Projects/agent/bin/sync-agent-mcps --public-only --cli codex
 ```
 
-The synchronizer supports Codex, Claude, Gemini, GitHub Copilot, and OpenCode.
+The synchronizer supports Codex, Claude, Gemini, and OpenCode.
 It owns only names present in the private manifest. Other user entries, Codex app MCPs,
 hosted connectors/plugins, and repository `.mcp.json` files are preserved.
 OpenCode JSONC configs are reported for manual merge instead of being rewritten

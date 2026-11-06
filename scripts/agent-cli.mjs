@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(scriptPath), "..");
-const supportedClis = ["codex", "claude", "opencode", "gemini", "copilot"];
+const supportedClis = ["codex", "claude", "opencode", "gemini"];
 
 function usage(stream = process.stdout) {
   stream.write(`usage: agent doctor [--json | --quiet]\n\n`);

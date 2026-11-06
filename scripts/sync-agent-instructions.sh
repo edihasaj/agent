@@ -5,7 +5,7 @@ mode="sync"
 all_clis=0
 include_private=1
 selected_clis=()
-supported_clis=(codex claude opencode gemini copilot)
+supported_clis=(codex claude opencode gemini)
 
 usage() {
   cat <<'USAGE'
@@ -25,7 +25,7 @@ Options:
   --check        report drift without changing files
   --public-only  ignore private instruction overlays
   --all-clis     configure every supported CLI, installed or not
-  --cli NAME     configure home, codex, claude, opencode, gemini, or copilot;
+  --cli NAME     configure home, codex, claude, opencode, or gemini;
                  repeat to configure multiple CLIs
 
 Environment overrides:
@@ -131,10 +131,6 @@ for cli_name in "${selected_clis[@]}"; do
     claude) destination="$HOME/.claude/CLAUDE.md" ;;
     opencode) destination="$HOME/.config/opencode/AGENTS.md" ;;
     gemini) destination="$HOME/.gemini/GEMINI.md" ;;
-    # Copilot CLI and the VS Code agent host read user-level instructions from
-    # ~/.copilot (or $COPILOT_HOME). ~/.github/copilot-instructions.md is only a
-    # repository path, so nothing reads it from $HOME.
-    copilot) destination="${COPILOT_HOME:-$HOME/.copilot}/copilot-instructions.md" ;;
     *) echo "error: unknown CLI: $cli_name" >&2; exit 2 ;;
   esac
 

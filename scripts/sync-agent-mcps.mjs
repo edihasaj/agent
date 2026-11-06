@@ -6,7 +6,7 @@ import { delimiter, dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-const supportedClis = ["codex", "claude", "opencode", "gemini", "copilot"];
+const supportedClis = ["codex", "claude", "opencode", "gemini"];
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(scriptPath), "..");
 const userHome = resolve(process.env.AGENT_SETUP_HOME || homedir());
@@ -184,12 +184,6 @@ function currentCliConfig(cli, name) {
     const result = run("codex", ["mcp", "get", name, "--json"], true);
     return result.status === 0 ? normalize(JSON.parse(result.stdout)) : null;
   }
-  if (cli === "copilot") {
-    const result = run("copilot", ["mcp", "get", name, "--json"], true);
-    if (result.status !== 0) return null;
-    const parsed = JSON.parse(result.stdout);
-    return normalize(parsed[name]);
-  }
   if (cli === "claude") {
     return normalize(readJson(join(userHome, ".claude.json")).mcpServers?.[name]);
   }
@@ -231,17 +225,6 @@ function currentCliEntries(cli) {
     return Object.entries(readJson(join(userHome, ".config", "opencode", "opencode.json")).mcp || {})
       .map(([name, entry]) => ({ name, enabled: entry.enabled !== false, config: normalize(entry) }));
   }
-  if (cli === "copilot") {
-    const paths = [
-      join(userHome, ".copilot", "mcp-config.json"),
-      join(userHome, ".config", "github-copilot", "mcp.json"),
-    ];
-    const path = paths.find(existsSync);
-    if (!path) return [];
-    const data = readJson(path);
-    return Object.entries(data.mcpServers || data.servers || {})
-      .map(([name, entry]) => ({ name, enabled: entry.enabled !== false, config: normalize(entry) }));
-  }
   return [];
 }
 
@@ -249,7 +232,6 @@ function removeCliConfig(cli, name) {
   if (cli === "codex") run("codex", ["mcp", "remove", name]);
   else if (cli === "claude") run("claude", ["mcp", "remove", "-s", "user", name]);
   else if (cli === "gemini") run("gemini", ["mcp", "remove", "-s", "user", name]);
-  else if (cli === "copilot") run("copilot", ["mcp", "remove", name]);
 }
 
 function cliAddArgs(cli, name, desired) {
@@ -258,7 +240,6 @@ function cliAddArgs(cli, name, desired) {
     if (cli === "codex") args = ["mcp", "add", name, "--", desired.command, ...desired.args];
     else if (cli === "claude") args = ["mcp", "add", "-s", "user", name, "--", desired.command, ...desired.args];
     else if (cli === "gemini") args = ["mcp", "add", "-s", "user", name, desired.command, ...desired.args];
-    else if (cli === "copilot") args = ["mcp", "add", name, "--", desired.command, ...desired.args];
   } else {
     if (cli === "codex") {
       args = ["mcp", "add", name, "--url", desired.url];
@@ -271,7 +252,6 @@ function cliAddArgs(cli, name, desired) {
       }
     }
     else if (cli === "gemini") args = ["mcp", "add", "-s", "user", "-t", "http", name, desired.url];
-    else if (cli === "copilot") args = ["mcp", "add", "--transport", "http", name, desired.url];
     if (desired.auth && !["codex", "claude"].includes(cli)) {
       throw new Error(`${cli} does not support managed ${desired.auth.type} auth for ${name}`);
     }

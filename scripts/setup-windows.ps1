@@ -11,7 +11,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$SupportedClis = @("codex", "claude", "opencode", "gemini", "copilot")
+$SupportedClis = @("codex", "claude", "opencode", "gemini")
 $RepoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $UserHome = if ($env:AGENT_SETUP_HOME) {
     [IO.Path]::GetFullPath($env:AGENT_SETUP_HOME)
@@ -235,7 +235,6 @@ function Sync-Instructions([bool]$CheckOnly, [string[]]$Clis) {
             claude { $Targets["claude"] = Join-Path (Join-Path $UserHome ".claude") "CLAUDE.md" }
             opencode { $Targets["opencode"] = Join-Path (Join-Path (Join-Path $UserHome ".config") "opencode") "AGENTS.md" }
             gemini { $Targets["gemini"] = Join-Path (Join-Path $UserHome ".gemini") "GEMINI.md" }
-            copilot { $Targets["copilot"] = Join-Path (Join-Path $UserHome ".github") "copilot-instructions.md" }
         }
     }
 

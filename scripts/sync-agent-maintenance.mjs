@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepoRoot = resolve(dirname(scriptPath), "..");
-const supportedClis = ["codex", "claude", "opencode", "gemini", "copilot"];
+const supportedClis = ["codex", "claude", "opencode", "gemini"];
 
 function usage(stream = process.stdout) {
   stream.write("usage: sync-agent-maintenance [--check] [--public-only] [--headless] [--all-clis] [--cli NAME]...\n");

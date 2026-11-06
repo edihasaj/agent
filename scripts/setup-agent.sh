@@ -7,7 +7,7 @@ all_clis=0
 headless=0
 expected_platform=""
 requested_clis=()
-supported_clis=(codex claude opencode gemini copilot)
+supported_clis=(codex claude opencode gemini)
 
 # Non-login SSH and service shells commonly omit user-installed CLI locations.
 # Add only executable locations; never source profiles or secrets during setup.
@@ -28,7 +28,7 @@ Options:
   --cli NAME       configure one CLI explicitly; repeat for multiple CLIs
   -h, --help       show this help
 
-Supported CLIs: codex, claude, opencode, gemini, copilot
+Supported CLIs: codex, claude, opencode, gemini
 EOF
 }
 

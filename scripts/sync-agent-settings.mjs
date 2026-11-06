@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-const supportedClis = ["codex", "claude", "opencode", "gemini", "copilot"];
+const supportedClis = ["codex", "claude", "opencode", "gemini"];
 const userHome = resolve(process.env.AGENT_SETUP_HOME || homedir());
 
 // CLIs absent from this map have no settings we manage — either they add no

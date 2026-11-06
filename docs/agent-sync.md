@@ -57,10 +57,7 @@ cat ~/.local/state/agent-sync/last-run.json
 ## Private instruction overlays
 
 The user-level instruction files (`~/AGENTS.md`, `~/.claude/CLAUDE.md`,
-`~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md`, ...) are symlinks
-to the public `AGENTS.MD`. Copilot CLI and the VS Code agent host read
-`~/.copilot/copilot-instructions.md` (or `$COPILOT_HOME`); `~/.github/` is only a
-repository path and is not read from `$HOME`. Rules that
+`~/.codex/AGENTS.md`, ...) are symlinks to the public `AGENTS.MD`. Rules that
 depend on private tooling do not belong in that public file. Put them in
 `manager/instructions/<name>.md` instead, and gate each file with a first line:
 
