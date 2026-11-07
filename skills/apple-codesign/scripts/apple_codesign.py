@@ -34,6 +34,7 @@ Examples:
 from __future__ import annotations
 
 import argparse
+import atexit
 import base64
 import datetime as dt
 import json
@@ -120,7 +121,10 @@ def resolve_api_key(vault: str, item: str) -> tuple[str, str, str]:
     issuer = issuer or op_read(f"op://{vault}/{item}/Issuer ID")
     if not key_id or not issuer:
         die("could not resolve Key ID / Issuer ID (set ASC_KEY_ID + ASC_ISSUER_ID or fix 1Password item)")
-    p8 = os.path.join(tempfile.mkdtemp(prefix="asc"), f"AuthKey_{key_id}.p8")
+    # The private key is a copy of the 1Password attachment; it must not outlive this process.
+    key_dir = tempfile.mkdtemp(prefix="asc")
+    atexit.register(shutil.rmtree, key_dir, True)
+    p8 = os.path.join(key_dir, f"AuthKey_{key_id}.p8")
     if not op_read(f"op://{vault}/{item}/AuthKey_{key_id}.p8", out_file=p8):
         die(f"could not read AuthKey_{key_id}.p8 from 1Password item '{item}'")
     return key_id, issuer, p8
