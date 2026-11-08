@@ -271,7 +271,9 @@ def cmd_stash_devid(a):
     if not pw:
         pw = input("p12 password: ").strip()
     # normalise the stored filename so `setup` can find it.
-    dest = os.path.join(tempfile.mkdtemp(), "developer-id.p12")
+    dest_dir = tempfile.mkdtemp(prefix="devid")
+    atexit.register(shutil.rmtree, dest_dir, True)
+    dest = os.path.join(dest_dir, "developer-id.p12")
     shutil.copy(a.p12, dest)
     _stash_p12(a.vault, a.cert_item, dest, pw)
 
@@ -289,7 +291,11 @@ def cmd_setup(a):
     fully-controlled signing keychain (headless-safe — never touches login)."""
     kc = a.keychain
     info("importing Developer ID certificate from 1Password…")
-    p12 = os.path.join(tempfile.mkdtemp(), "developer-id.p12")
+    # The certificate and its private key are a copy of the 1Password attachment; once
+    # imported into the keychain they must not outlive this process.
+    p12_dir = tempfile.mkdtemp(prefix="devid")
+    atexit.register(shutil.rmtree, p12_dir, True)
+    p12 = os.path.join(p12_dir, "developer-id.p12")
     if not op_read(f"op://{a.vault}/{a.cert_item}/developer-id.p12", out_file=p12):
         die(f"no developer-id.p12 in op://{a.vault}/{a.cert_item} — create + stash it first (`devid`)")
     pw = op_read(f"op://{a.vault}/{a.cert_item}/password") or ""
