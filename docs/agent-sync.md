@@ -4,6 +4,7 @@ read_when:
   - Changing automatic agent or manager repository updates.
   - Troubleshooting why a pull did not update skills, instructions, or MCPs.
   - Diagnosing stale skills, MCP policy, instructions, or runtime settings.
+  - Synchronizing instructions across native providers and isolated job runners.
   - Adding a private, machine-gated instruction overlay.
 ---
 
@@ -54,6 +55,20 @@ retired on 2026-10-05. Setup removes it from any Mac that still has it.
 cat ~/.local/state/agent-sync/last-run.json
 ```
 
+## Service consumers
+
+Instruction delivery follows the execution environment:
+
+| Consumer | Delivery | Verification |
+| --- | --- | --- |
+| Native CLI sessions, including Mission Runtime's Codex/Claude providers | The execution host's shared instruction links and named profile homes | Check the actual profile files and run `agent doctor` on that host. |
+| AutoReview Cloudflare Claude/Codex jobs, including Shipyard coding | Each new job resolves `edihasaj/agent` main and bundles its immutable revision, shared docs, and owned helpers into the authenticated source archive | Check the bundle revision and file hashes in a real job. Replayed attempts retain their original bundle. |
+| API-only workers with service-owned system prompts | Their own service configuration and release | Home-file synchronization does not update these prompts. |
+
+AutoReview's collection, bounds, cache, and replay contracts are documented in
+`~/Projects/wieldr/engines/autoreview/docs/cloudflare-runner.md`. Updating a controller host's
+checkout alone does not deliver instructions into a private job home.
+
 ## Private instruction overlays
 
 The user-level instruction files (`~/AGENTS.md`, `~/.claude/CLAUDE.md`,
@@ -72,7 +87,7 @@ listed command resolves with `command -v`. When at least one overlay applies,
 the destination becomes a generated regular file (marker line, canonical text,
 then each overlay under an `<!-- overlay: name.md -->` comment). When none
 apply, the symlink is restored. `--check` fails on a stale render; the
-post-merge hook and the scheduled sync re-render after either repository
+post-merge hook and on-demand reconciliation re-render after either repository
 updates. `--public-only` skips overlays. Preserved pointer files are left alone.
 
 Verify on a machine: `grep -c '<!-- overlay:' ~/.claude/CLAUDE.md`.
@@ -80,8 +95,8 @@ Verify on a machine: `grep -c '<!-- overlay:' ~/.claude/CLAUDE.md`.
 ## Adding an MCP later
 
 Add one credential-free entry to `manager/configs/mcps.json`, commit, and push.
-Both Macs fetch it automatically. `global` entries are rendered into each
-selected runtime; `on-demand` and `workflow` entries are removed from user-global
+Pull on each managed host to reconcile the change. `global` entries are rendered
+into each selected runtime; `on-demand` and `workflow` entries are removed from user-global
 configuration; `external` entries remain owned by their installer.
 
 Secrets and OAuth caches stay machine-local. A manifest may reference an
