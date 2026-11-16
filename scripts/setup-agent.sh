@@ -234,6 +234,10 @@ fi
 
 if [[ "$mode" == "sync" ]]; then
   if [[ "${#registry_args[@]}" -gt 0 ]]; then
+    # On a fresh machine the MCP/settings sync above creates ~/.codex/config.toml,
+    # which makes sync-agent-skills.sh discover that Codex home only now. Sync
+    # again so the check below does not fail on its missing skills and prompts.
+    "$repo_root/scripts/sync-agent-skills.sh" "${skill_args[@]}"
     verify_skill_args=("${registry_args[@]}" --check)
     [[ "$include_private" -eq 0 ]] && verify_skill_args+=(--public-only)
     "$repo_root/scripts/sync-agent-skills.sh" "${verify_skill_args[@]}"
