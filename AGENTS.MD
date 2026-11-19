@@ -101,6 +101,7 @@ elsewhere; a duplicate drifts and then breaks silently.
 - Use `trash` for deletes. Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
 - Remotes under `~/Projects`: prefer HTTPS; flip SSH->HTTPS before pull/push.
 - Commit with `./scripts/committer` when present, otherwise `committer` on PATH; provide explicit paths so only those files are staged.
+- Commit identity: commit with the identity git is configured to use in that repo, including per-folder `includeIf` configs (for example `~/Projects/fella/` commits as `edi-aios`). When nothing else is configured, the global identity `edihasaj <edihasaj@gmail.com>` applies. Check `git config user.name user.email` before the first commit in an unfamiliar repo; never override it with `-c user.*` or `--author`. For `gh` in a folder with its own account, source that folder's `env.sh` (for example `. ~/Projects/fella/env.sh`) instead of switching the global `gh` account.
 - Don’t delete/rename unexpected stuff; stop + ask.
 - No repo-wide S/R scripts; keep edits small/reviewable.
 - Avoid manual `git stash`; if Git auto-stashes during pull/rebase, that’s fine (hint, not hard guardrail).
