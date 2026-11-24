@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
+import { homedir, hostname } from "node:os";
 import { delimiter, dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,7 @@ const supportedClis = ["codex", "claude", "opencode", "gemini"];
 const scriptPath = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(scriptPath), "..");
 const userHome = resolve(process.env.AGENT_SETUP_HOME || homedir());
+const hostName = (process.env.AGENT_SETUP_HOST || hostname()).toLowerCase().replace(/\.local$/, "");
 const platform = process.env.AGENT_SETUP_PLATFORM || (process.platform === "win32" ? "windows" : "posix");
 
 function usage(stream = process.stdout) {
@@ -87,6 +88,10 @@ function loadManifest(path, required) {
     server.policy ||= server.enabled === false ? "on-demand" : "global";
     if (!["global", "on-demand", "workflow", "external"].includes(server.policy)) {
       throw new Error(`invalid policy for ${server.name}: ${server.policy}`);
+    }
+    if (server.hosts && (!Array.isArray(server.hosts) ||
+      server.hosts.some((host) => typeof host !== "string" || !host))) {
+      throw new Error(`invalid hosts list for ${server.name}: ${path}`);
     }
     if (!Array.isArray(server.clis) || server.clis.some((cli) => !supportedClis.includes(cli))) {
       throw new Error(`invalid clis list for ${server.name}: ${path}`);
@@ -320,7 +325,8 @@ function main() {
     }
     for (const server of servers) {
       if (!server.clis.includes(cli) || server.policy === "external") continue;
-      const shouldRemove = options.excluded.includes(server.name) || server.policy !== "global";
+      const hostAllowed = !server.hosts || server.hosts.some((host) => host.toLowerCase() === hostName);
+      const shouldRemove = options.excluded.includes(server.name) || server.policy !== "global" || !hostAllowed;
       if (shouldRemove) {
         try {
           const current = currentCliConfig(cli, server.name);

@@ -17,7 +17,7 @@ owned launcher. Keep secrets in machine-local environment files, never Git.
 - `chrome-devtools` -> `chrome-devtools-mcp@1.7.0 --autoConnect`
 - `recall` -> local Recall app MCP runtime
 - `zapfeed` -> `mcp-remote@0.1.38` to `https://zapfeed.io/api/mcp`
-- `notion` -> native HTTP to `https://mcp.notion.com/mcp` (global; OAuth with dynamic client registration, no API key; log in once per CLI, e.g. `claude mcp login notion` / `codex mcp login notion`)
+- `notion` -> native HTTP to `https://mcp.notion.com/mcp` (global but host-scoped to `macbook-server`; OAuth with dynamic client registration, no API key; log in once per CLI there, e.g. `claude mcp login notion` / `codex mcp login notion`)
 - `miro` -> `mcp-remote@0.1.38` to `https://mcp.miro.com/` (OAuth 2.1 browser login; tokens cached in `~/.mcp-auth`)
 - `slack` -> NOT via mcp-remote. Workspace Slack MCP apps commonly enforce a fixed redirect-URI allowlist and reject dynamic client registration, so mcp-remote's random-port `/oauth/callback` never matches (login loops). Use a client with native remote-MCP OAuth (Claude Code / VS Code / GitHub Copilot CLI): pin a fixed callback port + `/callback` path and have the Slack-app admin allowlist it. Workspace-specific client ids live in the private overlay.
 - `atlassian` -> `mcp-remote@0.1.38` to `https://mcp.atlassian.com/v1/mcp/authv2` using Streamable HTTP only (Jira + Confluence; OAuth browser login; endpoint-specific DCR/token state cached in `~/.mcp-auth`, so migrating from `/v1/sse` requires one fresh login and leaves the old cache entry unused)
@@ -80,6 +80,9 @@ Manifest policy is explicit:
 
 - `global`: reconcile the user-global entry. Use only remote HTTP services that
   every session needs and that do not start a local process.
+  An optional `hosts` list (hostnames, case-insensitive, `.local` ignored)
+  limits that to named machines; every other machine removes the entry.
+  `AGENT_SETUP_HOST` overrides the detected hostname for testing.
 - `on-demand`: actively remove the user-global entry; register it only in a
   project or an isolated manual session.
 - `workflow`: actively remove the user-global entry; an automation such as
